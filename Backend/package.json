@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "a youtube clone",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev": "nodemon --env-file=.env src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "ayush",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "nodemon": "^3.1.4"
+  }
 }
