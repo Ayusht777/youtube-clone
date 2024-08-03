@@ -13,4 +13,5 @@ app.use(express.urlencoded({ extended: true })); // it use for url handling  / r
 app.use(express.static("public")); // it is use to store files like data from pdf or images etc
 
 app.use(cookieParser()); // use for cookies handling on server level
+
 export { app };

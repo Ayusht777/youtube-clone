@@ -2,19 +2,23 @@
 // import { DB_NAME } from "./constants.js";
 import { connectDB } from "./db/index.js";
 import { app } from "./app.js";
-connectDB()
-  .then(
-    app.on("err", (err) =>
-      console.log(`app on error in index.js at src ${err}`)
-    ),
+const startServer = async () => {
+  try {
+    await connectDB();
     app.listen(process.env.PORT || 8080, () => {
       console.log(`app is listening at port ${process.env.PORT}`);
-    })
-  )
-  .catch((err) => {
-    console.log(`${err} while connecting db with app`);
-  });
+    });
+  } catch (error) {
+    console.error(`${error} while connecting db with app`);
+    process.exit(1);
+  }
+};
 
+app.on("error", (err) => {
+  console.error(`app on error in index.js at src: ${err}`);
+});
+
+startServer();
 // import express from "express";
 // const app = express();
 // (async () => {
