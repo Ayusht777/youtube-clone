@@ -14,7 +14,7 @@ const uploadFileCloudinary = async (localFilePath) => {
     });
     //file uploaded successfully
     console.log(`File is Uploaded on Cloudnairy -> ${response}`);
-    return response; // idealy should retun url
+    return response; // ideally should return url
   } catch (error) {
     fs.unlinkSync(localFilePath); // reomve file sync way in tempoary storage of server as the upload got failed
     return null;
