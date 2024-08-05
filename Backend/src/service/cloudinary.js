@@ -1,24 +1,28 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import { ApiError } from "../utils/ApiError.js";
+
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_API_KEY,
-  api_secret: process.env.CLOUD_API_SECRET,
+  cloud_name: "dwanlo5fg",
+  api_key: "591242146842586",
+  api_secret: "Nz7q8lPAn_z5VOez9CnBFnQ-6lk",
 });
 
 const uploadFileCloudinary = async (localFilePath) => {
   try {
-    if (!localFilePath) return null; //no file path then return null
+    if (!localFilePath) {
+      throw new ApiError(400, "No file path provided");
+    }
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
-    //file uploaded successfully
-    console.log(`File is Uploaded on Cloudnairy -> ${response}`);
-    return response; // ideally should return url
+    console.log("File is Uploaded on Cloudinary -> ", response);
+    return response.secure_url;
   } catch (error) {
-    fs.unlinkSync(localFilePath); // reomve file sync way in tempoary storage of server as the upload got failed
-    return null;
+    fs.unlinkSync(localFilePath);
+    console.error("Cloudinary upload error:", error);
+    throw new ApiError(500, "Failed to upload file to Cloudinary");
   }
 };
 
-export {uploadFileCloudinary}
+export { uploadFileCloudinary };

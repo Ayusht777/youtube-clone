@@ -18,6 +18,7 @@ const allowedMimeTypes = [
   "image/avif",
   "image/gif",
 ];
+
 const registerUser = asyncHandler(async (req, res) => {
   // get user detail from frontend
   // validation on backend site {not empty}
@@ -30,6 +31,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // return  response
   const { email, password, userName, fullName } = req.body;
   console.log(email, password, userName, fullName);
+
   if (
     [email, password, userName, fullName].some(
       (inputFields) => inputFields?.trim == "" //trim used to remove space
@@ -41,6 +43,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!RegExp(emailRegex).test(email)) {
     throw new ApiError(422, "Invalid email address");
   }
+
   if (password.length < 8) {
     throw new ApiError(
       422,
@@ -55,9 +58,11 @@ const registerUser = asyncHandler(async (req, res) => {
       "Password must contains a Capital letter,spacial symbol and number"
     );
   }
+
   if (userName.length < 3) {
     throw new ApiError(422, "Username must be at least 3 characters");
   }
+
   if (fullName.length < 3) {
     throw new ApiError(422, "Full name must be at least 3 characters");
   }
@@ -68,12 +73,14 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatar = req.files?.avatar?.[0]?.path;
+  console.log(avatar);
   const coverImage = req.files?.coverImage?.[0]?.path;
+
   if (!avatar) {
     throw new ApiError(400, "Avatar is required"); // 400 Bad Request: No file uploaded
   }
 
-  const { mimetype, path, size } = avatar;
+  const { mimetype, size } = avatar;
 
   // Validate file type
   if (allowedMimeTypes.includes(mimetype)) {
@@ -87,7 +94,9 @@ const registerUser = asyncHandler(async (req, res) => {
   if (size < MIN_FILE_SIZE || size > MAX_FILE_SIZE) {
     throw new ApiError(
       413,
-      `File size must be between ${MIN_FILE_SIZE / 1024} KB and ${MAX_FILE_SIZE / 1024 / 1024} MB` // 413 Payload Too Large
+      `File size must be between ${MIN_FILE_SIZE / 1024} KB and ${
+        MAX_FILE_SIZE / 1024 / 1024
+      } MB` // 413 Payload Too Large
     );
   }
 
@@ -104,19 +113,32 @@ const registerUser = asyncHandler(async (req, res) => {
     if (size < MIN_FILE_SIZE || size > MAX_FILE_SIZE) {
       throw new ApiError(
         413,
-        `File size must be between ${MIN_FILE_SIZE / 1024} KB and ${MAX_FILE_SIZE / 1024 / 1024} MB` // 413 Payload Too Large
+        `File size must be between ${MIN_FILE_SIZE / 1024} KB and ${
+          MAX_FILE_SIZE / 1024 / 1024
+        } MB` // 413 Payload Too Large
       );
     }
   }
 
-  const avatarUrl = await uploadFileCloudinary(path);
-  const coverImageUrl = await uploadFileCloudinary(coverImage);
+  const avatarUrl = await uploadFileCloudinary(avatar);
+
   if (!avatarUrl) {
     throw new ApiError(500, "Failed to upload avatar. Please try again.");
   }
 
+  let coverImageUrl = "";
+  if (coverImage) {
+    coverImageUrl = await uploadFileCloudinary(coverImage);
+    if (!coverImageUrl) {
+      throw new ApiError(
+        500,
+        "Failed to upload cover image. Please try again."
+      );
+    }
+  }
+
   const user = await User.create({
-    userName: userName.lowercase(),
+    userName: userName.toLowerCase(),
     email,
     fullName,
     avatar: avatarUrl,
@@ -125,12 +147,15 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   console.log(user);
+
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   ); //remove password & refresh token
+
   if (!createdUser) {
     throw new ApiError(500, "Failed to create user. Please try again.");
   }
+
   return res
     .status(201)
     .json(new ApiResponse(201, createdUser, "User created"));
