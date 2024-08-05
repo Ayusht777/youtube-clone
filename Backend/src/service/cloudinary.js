@@ -3,9 +3,9 @@ import fs from "fs";
 import { ApiError } from "../utils/ApiError.js";
 
 cloudinary.config({
-  cloud_name: "dwanlo5fg",
-  api_key: "591242146842586",
-  api_secret: "Nz7q8lPAn_z5VOez9CnBFnQ-6lk",
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
 });
 
 const uploadFileCloudinary = async (localFilePath) => {
@@ -17,6 +17,7 @@ const uploadFileCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
     console.log("File is Uploaded on Cloudinary -> ", response);
+    fs.unlinkSync(localFilePath); //remove the local file after uploading to cloudinary
     return response.secure_url;
   } catch (error) {
     fs.unlinkSync(localFilePath);

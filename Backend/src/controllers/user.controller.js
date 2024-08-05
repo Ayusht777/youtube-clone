@@ -30,14 +30,20 @@ const registerUser = asyncHandler(async (req, res) => {
   // check user creation
   // return  response
   const { email, password, userName, fullName } = req.body;
-  console.log(email, password, userName, fullName);
-
+  console.log(req.body);
   if (
     [email, password, userName, fullName].some(
       (inputFields) => inputFields?.trim == "" //trim used to remove space
     )
   ) {
     throw new ApiError(400, "All fields are required");
+  }
+  if (userName.length <= 3) {
+    throw new ApiError(422, "Username must be at least 3 characters");
+  }
+
+  if (fullName.length <= 3) {
+    throw new ApiError(422, "Full name must be at least 3 characters");
   }
 
   if (!RegExp(emailRegex).test(email)) {
@@ -59,21 +65,13 @@ const registerUser = asyncHandler(async (req, res) => {
     );
   }
 
-  if (userName.length < 3) {
-    throw new ApiError(422, "Username must be at least 3 characters");
-  }
-
-  if (fullName.length < 3) {
-    throw new ApiError(422, "Full name must be at least 3 characters");
-  }
-
   const existedUser = await User.findOne({ $or: [{ email }, { userName }] });
   if (existedUser) {
     throw new ApiError(409, "User already exists");
   }
 
   const avatar = req.files?.avatar?.[0]?.path;
-  console.log(avatar);
+  // console.log(avatar);
   const coverImage = req.files?.coverImage?.[0]?.path;
 
   if (!avatar) {
@@ -161,4 +159,44 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User created"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  //get data fields like username , mail , password
+  //validate all fields
+  //check user existed in db or not
+  //generate  access token and refresh token
+  //send cookie secure
+  // send response
+
+  const { userName, email, password } = req.body;
+  console.log(userName, email, password);
+
+  if (!userName || !email) {
+    throw new ApiError(422, "username & email is required");
+  }
+  if (!password) {
+    throw new ApiError(422, "Password is required");
+  }
+
+  if (userName.length <= 3) {
+    throw new ApiError(411, "username should be at least of 3 letters");
+  }
+  if (!RegExp(emailRegex).test(email)) {
+    throw new ApiError(406, "enter a valid email");
+  }
+  if (password.length < 8) {
+    throw new ApiError(411, "password should be at least of 8 letters");
+  } else if (!RegExp(passwordRegex).test(password)) {
+    throw new ApiError(
+      406,
+      "Password must contains a Capital letter,spacial symbol and numbe"
+    );
+  }
+
+  const checkUser = await User.findOne({ $or: [{ email }, { userName }] });
+
+  if(!checkUser){
+    throw new ApiError()
+  }
+});
+
+export { registerUser, loginUser };
