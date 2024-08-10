@@ -19,6 +19,38 @@ const allowedMimeTypes = [
   "image/gif",
 ];
 
+const generateAccessTokenAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId); // user object from model
+    if (!user) {
+      throw new ApiError(
+        500,
+        "Something went wrong while generating Refresh & Access Token due to user not found"
+      );
+    }
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    user.refreshToken = refreshToken;
+    await user.save({ ValidateBeforeSave: false }); //off auto validation
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating Refresh & Access Token"
+    );
+  }
+};
+
+const optionsForAccessTokenCookie = {
+  httpOnly: true,
+  secure: true,
+  maxAge: 15 * 60 * 1000, // 15 minutes
+};
+const optionsForRefreshTokenCookie = {
+  httpOnly: true,
+  secure: true,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
 const registerUser = asyncHandler(async (req, res) => {
   // get user detail from frontend
   // validation on backend site {not empty}
@@ -146,17 +178,15 @@ const registerUser = asyncHandler(async (req, res) => {
 
   console.log(user);
 
-  const createdUser = await User.findById(user._id).select(
+  const newUser = await User.findById(user._id).select(
     "-password -refreshToken"
   ); //remove password & refresh token
 
-  if (!createdUser) {
+  if (!newUser) {
     throw new ApiError(500, "Failed to create user. Please try again.");
   }
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, createdUser, "User created"));
+  return res.status(201).json(new ApiResponse(201, newUser, "User created"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -170,7 +200,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { userName, email, password } = req.body;
   console.log(userName, email, password);
 
-  if (!userName || !email) {
+  if (!userName && !email) {
     throw new ApiError(422, "username & email is required");
   }
   if (!password) {
@@ -192,11 +222,51 @@ const loginUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const checkUser = await User.findOne({ $or: [{ email }, { userName }] });
+  const checkedUser = await User.findOne({ $or: [{ email }, { userName }] });
 
-  if(!checkUser){
-    throw new ApiError()
+  if (!checkedUser) {
+    throw new ApiError(403, "user does not existed existed");
   }
+
+  const isPassword = await checkedUser.isPasswordCorrect(password);
+  if (!isPassword) throw new ApiError(401, "Invalid User Password");
+
+  // if (!checkedUser.isPasswordCorrect(password)) {
+  //   throw new ApiError(401, "Invalid User Password");
+  // }
+
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(checkedUser._id);
+
+  const loggedInUser = await User.findById(checkedUser._id).select(
+    "-password -refreshToken"
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
+    .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User Logged In Successfully"
+      )
+    );
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: { refreshToken: undefined },
+    },
+    { new: true }
+  );
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
+    .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
+    .json(new ApiResponse(200, {}, "User Logout successfully"));
+});
+export { registerUser, loginUser, logoutUser };
