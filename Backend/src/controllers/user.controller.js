@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const passwordRegex =
-  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
 
 const MIN_FILE_SIZE = 20 * 1024; // 20 KB
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -82,10 +82,10 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(422, "Invalid email address");
   }
 
-  if (password.length < 8) {
+  if (password.length < 6) {
     throw new ApiError(
       422,
-      "Password must be at least 8 characters"
+      "Password must be at least 6 characters"
     ); /*Error Code 422 (Unprocessable Entity):
     Both checks for password length and complexity use this code.
     It indicates that the password does not meet the required length or complexity,
@@ -213,8 +213,8 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!RegExp(emailRegex).test(email)) {
     throw new ApiError(406, "enter a valid email");
   }
-  if (password.length < 8) {
-    throw new ApiError(411, "password should be at least of 8 letters");
+  if (password.length < 6) {
+    throw new ApiError(411, "password should be at least of 6 letters");
   } else if (!RegExp(passwordRegex).test(password)) {
     throw new ApiError(
       406,
@@ -256,6 +256,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
+  
   await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -265,8 +266,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   );
   return res
     .status(200)
-    .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
-    .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
+    .cookie("accessToken", optionsForAccessTokenCookie)
+    .cookie("refreshToken", optionsForRefreshTokenCookie)
     .json(new ApiResponse(200, {}, "User Logout successfully"));
 });
 export { registerUser, loginUser, logoutUser };
