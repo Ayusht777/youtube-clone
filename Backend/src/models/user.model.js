@@ -48,12 +48,17 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified) return next();
-  this.password = await bcrypt.hash(this.password, 1);
+  const salt = await bcrypt.genSalt(1);
+  this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (passwordParameter) {
-  return await bcrypt.compare(passwordParameter, this.password);
+userSchema.methods.isPasswordCorrect = async function (candidatePassword) {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password); //it always return false for correct match do not know why
+  } catch (error) {
+    throw new Error("Error comparing passwords");
+  }
 };
 userSchema.methods.generateAccessToken = async function () {
   return await jwt.sign(

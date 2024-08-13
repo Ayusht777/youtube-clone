@@ -51,6 +51,10 @@ const optionsForRefreshTokenCookie = {
   secure: true,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
+const optionsForLoginStateCookie = {
+  httpOnly: true,
+  secure: true,
+};
 const registerUser = asyncHandler(async (req, res) => {
   // get user detail from frontend
   // validation on backend site {not empty}
@@ -62,10 +66,10 @@ const registerUser = asyncHandler(async (req, res) => {
   // check user creation
   // return  response
   const { email, password, userName, fullName } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
   if (
     [email, password, userName, fullName].some(
-      (inputFields) => inputFields?.trim == "" //trim used to remove space
+      (inputFields) => inputFields?.trim() == "" //trim used to remove space
     )
   ) {
     throw new ApiError(400, "All fields are required");
@@ -176,8 +180,6 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
   });
 
-  console.log(user);
-
   const newUser = await User.findById(user._id).select(
     "-password -refreshToken"
   ); //remove password & refresh token
@@ -197,8 +199,11 @@ const loginUser = asyncHandler(async (req, res) => {
   //send cookie secure
   // send response
 
+  if (req.cookies.accessToken || req.cookies.refreshToken) {
+    throw new ApiError(400, "User is already logged in.");
+  }
   const { userName, email, password } = req.body;
-  console.log(userName, email, password);
+  // console.log(userName, email, password);
 
   if (!userName && !email) {
     throw new ApiError(422, "username & email is required");
@@ -225,11 +230,12 @@ const loginUser = asyncHandler(async (req, res) => {
   const checkedUser = await User.findOne({ $or: [{ email }, { userName }] });
 
   if (!checkedUser) {
-    throw new ApiError(403, "user does not existed existed");
+    throw new ApiError(403, "User does not existed existed");
   }
 
-  const isPassword = await checkedUser.isPasswordCorrect(password);
-  if (!isPassword) throw new ApiError(401, "Invalid User Password");
+  const isPassword = await checkedUser.isPasswordCorrect(checkedUser.password);
+
+  if (isPassword) throw new ApiError(401, "Invalid User Password"); //refer user model for isPasswordCorrect Checked is not inverse
 
   // if (!checkedUser.isPasswordCorrect(password)) {
   //   throw new ApiError(401, "Invalid User Password");
@@ -246,6 +252,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
     .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
+    .cookie("loginSate", true, optionsForLoginStateCookie)
     .json(
       new ApiResponse(
         200,
@@ -256,17 +263,26 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: { refreshToken: undefined },
-    },
-    { new: true }
-  );
+  const user = await User.findById(req.user._id);
+  if (!user || !user.refreshToken) {
+    throw new ApiError(401, "User is not logged in or session has expired");
+  }
+  if (user && user.refreshToken) {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: { refreshToken: undefined },
+      },
+      { new: true }
+    );
+  } else {
+    throw new ApiError(401, "Unauthorized request for LOGOUT");
+  }
+
   return res
     .status(200)
-    .cookie("accessToken", optionsForAccessTokenCookie)
-    .cookie("refreshToken", optionsForRefreshTokenCookie)
+    .clearCookie("accessToken", optionsForAccessTokenCookie)
+    .clearCookie("refreshToken", optionsForRefreshTokenCookie)
     .json(new ApiResponse(200, {}, "User Logout successfully"));
 });
 

@@ -8,8 +8,10 @@ export const VerifyJwt = asyncHandler(async (req, res, next) => {
     const token =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", ""); //get access token
-    if (!token) {
-      throw new ApiError(401, "Unauthorized request");
+
+    // console.log(token);
+    if (!token || typeof token !== "string") {
+      throw new ApiError(401, "authorization token is missing or invalid");
     }
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
