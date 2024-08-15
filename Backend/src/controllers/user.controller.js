@@ -51,10 +51,7 @@ const optionsForRefreshTokenCookie = {
   secure: true,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
-const optionsForLoginStateCookie = {
-  httpOnly: true,
-  secure: true,
-};
+
 const registerUser = asyncHandler(async (req, res) => {
   // get user detail from frontend
   // validation on backend site {not empty}
@@ -69,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // console.log(req.body);
   if (
     [email, password, userName, fullName].some(
-      (inputFields) => inputFields?.trim() == "" //trim used to remove space
+      (inputFields) => inputFields?.trim() === "" //trim used to remove space
     )
   ) {
     throw new ApiError(400, "All fields are required");
@@ -199,9 +196,9 @@ const loginUser = asyncHandler(async (req, res) => {
   //send cookie secure
   // send response
 
-  if (req.cookies.accessToken || req.cookies.refreshToken) {
-    throw new ApiError(400, "User is already logged in.");
-  }
+  // if (req.cookies.accessToken || req.cookies.refreshToken) {
+  //   throw new ApiError(400, "User is already logged in.");
+  // }
   const { userName, email, password } = req.body;
   // console.log(userName, email, password);
 
@@ -227,24 +224,20 @@ const loginUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const checkedUser = await User.findOne({ $or: [{ email }, { userName }] });
+  const user = await User.findOne({
+    $or: [{ userName }, { email }],
+  });
+  if (!user) throw new ApiError(401, "User does not exist !!");
+  console.log("user->", user);
 
-  if (!checkedUser) {
-    throw new ApiError(403, "User does not existed existed");
-  }
+  const isPasswordValid = await user.isPasswordCorrect(password);
 
-  const isPassword = await checkedUser.isPasswordCorrect(checkedUser.password);
-
-  if (isPassword) throw new ApiError(401, "Invalid User Password"); //refer user model for isPasswordCorrect Checked is not inverse
-
-  // if (!checkedUser.isPasswordCorrect(password)) {
-  //   throw new ApiError(401, "Invalid User Password");
-  // }
+  if (!isPasswordValid) throw new ApiError(401, "Invalid User Password"); //refer user model for isPasswordCorrect Checked is not inverse
 
   const { accessToken, refreshToken } =
-    await generateAccessTokenAndRefreshToken(checkedUser._id);
+    await generateAccessTokenAndRefreshToken(user._id);
 
-  const loggedInUser = await User.findById(checkedUser._id).select(
+  const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
 
@@ -252,7 +245,6 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
     .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
-    .cookie("loginSate", true, optionsForLoginStateCookie)
     .json(
       new ApiResponse(
         200,
@@ -337,4 +329,98 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  //one case possible if user login or not then it should able to access this route
+  //password body current and new password
+  // error handling
+  //check if current password for user is matched in db
+  // if matched then update the password in db
+  // if not matched then throw error
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(422, "current password and new password is required");
+  }
+  if (currentPassword.length < 6 || newPassword.length < 6) {
+    throw new ApiError(411, "password should be at least of 6 letters");
+  }
+  if (!RegExp(passwordRegex).test(currentPassword)) {
+    throw new ApiError(
+      406,
+      "Password must contains a Capital letter,spacial symbol and number"
+    );
+  }
+
+  if (!RegExp(passwordRegex).test(newPassword)) {
+    throw new ApiError(
+      406,
+      "Password must contains a Capital letter,spacial symbol and number"
+    );
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(406, "New password is same as current password");
+  }
+  const user = await User.findById(req.user._id); //see in auth middleware
+
+  if (!user) {
+    throw new ApiError(404, "User does not existed");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) throw new ApiError(401, "Invalid user password");
+
+  user.password = newPassword;
+  await user.save({ ValidateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Current password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+  if (!fullName || !email) {
+    throw new ApiError(422, "fullName and email is required");
+  }
+  if (fullName.length < 3) {
+    throw new ApiError(411, "fullName  should be at least of 6 letters");
+  }
+  if (!RegExp(emailRegex).test(email)) {
+    throw new ApiError(406, "Invalid email");
+  }
+
+  const user = User.findById(
+    req.user._id,
+    {
+      $set: {
+        fullName: fullName,
+        email: email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User does not existed");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+};

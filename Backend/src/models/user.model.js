@@ -1,64 +1,61 @@
-import { Schema, model } from "mongoose";
+import { Schema ,model} from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 const userSchema = new Schema(
   {
     userName: {
       type: String,
-      require: true,
+      required: true,
       unique: true,
-      lowercase: true,
       trim: true,
+      lowercase: true,
       index: true,
     },
     email: {
       type: String,
-      require: true,
+      required: true,
       unique: true,
-      lowercase: true,
       trim: true,
+      lowercase: true,
     },
     fullName: {
       type: String,
-      require: true,
+      requred: true,
       trim: true,
       index: true,
     },
     avatar: {
-      type: String, //cloudinary
-      require: true,
+      type: String, //cloudnary url
+      required: true,
     },
     coverImage: {
       type: String,
     },
-    watchHistory: {
-      type: Schema.Types.ObjectId,
-      ref: "Video",
-    },
+    watchHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Video",
+      },
+    ],
     password: {
       type: String,
-      require: [true, "Password is Required"],
+      required: [true, "password is required"],
     },
     refreshToken: {
       type: String,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
-
 userSchema.pre("save", async function (next) {
-  if (!this.isModified) return next();
-  const salt = await bcrypt.genSalt(1);
-  this.password = await bcrypt.hash(this.password, salt);
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
-
-userSchema.methods.isPasswordCorrect = async function (candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.password); //it always return false for correct match do not know why
-  } catch (error) {
-    throw new Error("Error comparing passwords");
-  }
+userSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
 };
 userSchema.methods.generateAccessToken = async function () {
   return await jwt.sign(
