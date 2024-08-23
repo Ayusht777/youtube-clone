@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadFileCloudinary } from "../service/cloudinary.js";
+import {
+  uploadFileCloudinary,
+  deleteFileFromCloudinary,
+} from "../service/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -111,10 +114,10 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar is required"); // 400 Bad Request: No file uploaded
   }
 
-  const { mimetype, size } = avatar;
-
+  const { mimetype, size } = req.files?.avatar?.[0];
+  console.log(mimetype, size);
   // Validate file type
-  if (allowedMimeTypes.includes(mimetype)) {
+  if (!allowedMimeTypes.includes(mimetype)) {
     throw new ApiError(
       415,
       "Unsupported file type. Allowed formats are: JPEG, PNG, JPG, WebP, AVIF, GIF"
@@ -132,7 +135,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   if (coverImage) {
-    const { mimetype, size } = coverImage;
+    const { mimetype, size } = req.files?.coverImage?.[0];
     if (!allowedMimeTypes.includes(mimetype)) {
       throw new ApiError(
         415,
@@ -151,16 +154,15 @@ const registerUser = asyncHandler(async (req, res) => {
     }
   }
 
-  const avatarUrl = await uploadFileCloudinary(avatar);
-
-  if (!avatarUrl) {
+  const avatarUploadResponse = await uploadFileCloudinary(avatar);
+  console.log(avatarUploadResponse.url);
+  if (!avatarUploadResponse.url || !avatarUploadResponse.publicId) {
     throw new ApiError(500, "Failed to upload avatar. Please try again.");
   }
-
-  let coverImageUrl = "";
+  let CoverImageUploadResponse = "";
   if (coverImage) {
-    coverImageUrl = await uploadFileCloudinary(coverImage);
-    if (!coverImageUrl) {
+    CoverImageUploadResponse = await uploadFileCloudinary(coverImage);
+    if (!CoverImageUploadResponse.url || !CoverImageUploadResponse.publicId) {
       throw new ApiError(
         500,
         "Failed to upload cover image. Please try again."
@@ -172,8 +174,12 @@ const registerUser = asyncHandler(async (req, res) => {
     userName: userName.toLowerCase(),
     email,
     fullName,
-    avatar: avatarUrl,
-    coverImage: coverImageUrl?.url || "",
+    avatar: {
+      url: avatarUploadResponse.url,
+      publicId: avatarUploadResponse.publicId,
+    },
+
+    coverImage: CoverImageUploadResponse?.url || "",
     password,
   });
 
@@ -366,7 +372,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User does not existed");
   }
 
-  const isPasswordValid = await user.isPasswordCorrect(password);
+  const isPasswordValid = await user.isPasswordCorrect(currentPassword);
   if (!isPasswordValid) throw new ApiError(401, "Invalid user password");
 
   user.password = newPassword;
@@ -385,6 +391,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email } = req.body;
+  console.log(fullName, email);
   if (!fullName || !email) {
     throw new ApiError(422, "fullName and email is required");
   }
@@ -395,12 +402,62 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     throw new ApiError(406, "Invalid email");
   }
 
-  const user = User.findById(
-    req.user._id,
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
     {
       $set: {
-        fullName: fullName,
-        email: email,
+        fullName,
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account detail updated Successfully"));
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarFilePath = req.file?.path; // .file due to single file
+  if (!avatarFilePath) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+  const { mimetype, size } = req.file;
+
+  // Validate file type
+  if (!allowedMimeTypes.includes(mimetype)) {
+    throw new ApiError(
+      415,
+      "Unsupported file type. Allowed formats are: JPEG, PNG, JPG, WebP, AVIF, GIF"
+    ); // 415 Unsupported Media Type
+  }
+
+  // Validate file size
+  if (size < MIN_FILE_SIZE || size > MAX_FILE_SIZE) {
+    throw new ApiError(
+      413,
+      `File size must be between ${MIN_FILE_SIZE / 1024} KB and ${
+        MAX_FILE_SIZE / 1024 / 1024
+      } MB` // 413 Payload Too Large
+    );
+  }
+
+  const avatar = await uploadFileCloudinary(avatarFilePath);
+  if (!avatar.url && !avatar.publicId) {
+    throw new ApiResponse(400, "Avatar file is not uploaded");
+  }
+  const deleteOldAvatarImage = await deleteFileFromCloudinary(
+    req.user?.avatar.publicId
+  );
+
+  if (!deleteOldAvatarImage) {
+    throw new ApiResponse(400, "Avatar file is not deleted");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: { url: avatar.url, publicId: avatar.publicId },
       },
     },
     { new: true }
@@ -409,10 +466,15 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User does not existed");
   }
-
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "User updated successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { avatar: avatar.url },
+        "Avatar updated successfully"
+      )
+    );
 });
 
 export {
@@ -423,4 +485,5 @@ export {
   changeCurrentPassword,
   getCurrentUser,
   updateAccountDetails,
+  updateUserAvatar,
 };
