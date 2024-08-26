@@ -7,6 +7,7 @@ import {
 } from "../service/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const passwordRegex =
   /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
@@ -477,6 +478,122 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     );
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { userName } = req.params;
+  // console.log(userName, req.params);
+  if (!userName?.trim()) {
+    throw new ApiError(400, "userName is required in params");
+  }
+  const channel = await User.aggregate([
+    { $match: { userName: userName?.toLowerCase() } },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id", //it will refer to the _id of the user object it is the field of current model which is user now
+        foreignField: "channel",
+        as: "subscribers", //lowercase name will be of model and become plural 's
+      },
+    },
+    {
+      $lookup: {
+        //it is for the youtuber who subscribed which channels
+        from: "subscriptions",
+        localField: "_id", //it will refer to the _id of the user object
+        foreignField: "subscriber",
+        as: "subscribedChannels", //lowercase name will be of model and become plural 's
+      },
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers", //added $ due to field refer line ~501
+        },
+        subscribedChannelsCount: { $size: "$subscribedChannels" },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] }, //in this where are finding subscribed or not [from,where]
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        userName: 1,
+        fullName: 1,
+        email: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscribers: 1,
+        subscribedChannels: 1,
+        subscriberCount: 1,
+        subscribedChannelsCount: 1,
+        isSubscribed: 1,
+      },
+    },
+  ]);
+  console.log(channel);
+  if (!channel?.length) {
+    throw new ApiError(404, "User does not existed");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User fetched successfully"));
+});
+
+const getUserWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    userName: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner", // it is used to give data in object not in [{}]
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  // console.log(user);
+  if (!user?.length) {
+    throw new ApiError(404, "User does not existed");
+  }
+  return res
+    .status(200)
+    .send(
+      new ApiResponse(200, user[0].watchHistory, "User fetched successfully")
+    );
+});
 export {
   registerUser,
   loginUser,
@@ -486,4 +603,6 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
+  getUserChannelProfile,
+  getUserWatchHistory,
 };
