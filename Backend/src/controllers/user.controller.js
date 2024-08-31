@@ -75,11 +75,11 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
-  if (userName.length <= 3) {
+  if (userName.length < 3) {
     throw new ApiError(422, "Username must be at least 3 characters");
   }
 
-  if (fullName.length <= 3) {
+  if (fullName.length < 3) {
     throw new ApiError(422, "Full name must be at least 3 characters");
   }
 
@@ -216,7 +216,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(422, "Password is required");
   }
 
-  if (userName.length <= 3) {
+  if (userName.length < 3) {
     throw new ApiError(411, "username should be at least of 3 letters");
   }
   if (!RegExp(emailRegex).test(email)) {
@@ -270,7 +270,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
       req.user._id,
       {
-        $set: { refreshToken: undefined },
+        // $set: { refreshToken: undefined },
+        $unset: { refreshToken: 1 },
       },
       { new: true }
     );

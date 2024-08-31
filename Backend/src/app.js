@@ -16,9 +16,12 @@ app.use(cookieParser()); // use for cookies handling on server level
 
 //Routes
 import userRoutes from "./routes/user.routes.js";
+import videoRoutes from "./routes/video.routes.js";
+import communityRoutes from "./routes/community.routes.js";
 //Routes Declarations
 app.use("/api/v1/users", userRoutes);
-
+app.use("/api/v1/videos", videoRoutes);
+app.use("/api/v1/community", communityRoutes);
 //http:localhost:8080//api/v1/users/register
 
 export { app };
