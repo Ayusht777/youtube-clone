@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { Community } from "../models/community.model.js";
+import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -94,7 +96,7 @@ const createTweet = asyncHandler(async (req, res) => {
         from: "users",
         localField: "owner",
         foreignField: "_id",
-        as: "PostCreatedBy",
+        as: "postCreatedBy",
         pipeline: [
           {
             $project: {
@@ -133,7 +135,9 @@ const createTweet = asyncHandler(async (req, res) => {
         },
         isLikeByUser: {
           $cond: {
-            if: { $in: [user, "$likeByUser.likeBy"] },
+            if: {
+              $in: [new mongoose.Types.ObjectId(user), "$likeByUser.likeBy"],
+            },
             then: true,
             else: false,
           },
@@ -146,7 +150,7 @@ const createTweet = asyncHandler(async (req, res) => {
     {
       $unwind: {
         //you can also use $ addFields
-        path: "$PostCreatedBy",
+        path: "$postCreatedBy",
       },
     },
   ]);
@@ -169,6 +173,86 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
+  //get user id from params
+  //check id is valid
+  const { userId } = req.params;
+
+  if (!userId) {
+    throw new ApiError(401, "user id not found in params");
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid user ID format");
+  }
+
+  const posts = await Community.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner", //filed of community
+        foreignField: "_id",
+        as: "postCreatedBy",
+        pipeline: [
+          {
+            $project: {
+              _id: 0,
+              userName: 1,
+              fullName: 1,
+              avatar: { url: 1 },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "community",
+        as: "likedByUser",
+      },
+    },
+    {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "community",
+        as: "commentByUser",
+      },
+    },
+    {
+      $addFields: {
+        likeByUser: {
+          $size: "$likedByUser",
+        },
+        isLikeByUser: {
+          $cond: {
+            if: {
+              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeBy"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+        recentComment: {
+          $slice: ["$commentByUser", -1], //it will get only one comment which one is recent one}
+        },
+        postCreatedBy: {
+          $first: "$postCreatedBy",
+        },
+      },
+    },
+    { $limit: 1 },
+  ]);
+  console.log(posts);
+  if (!posts?.length > 0) {
+    throw new ApiError(401, "posts not found");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, posts, "all post successfully fetched"));
 });
 
 const updateTweetContent = asyncHandler(async (req, res) => {
@@ -298,6 +382,19 @@ const deleteTweet = asyncHandler(async (req, res) => {
   if (!deletePostMediaOncloudinary) {
     throw new ApiError(401, "post media not deleted on cloudinary");
   }
+  const deletePostLike = await Like.deleteMany({
+    community: new mongoose.Types.ObjectId(postId),
+  });
+  console.log(deletePostLike);
+  if (!deletePostLike) {
+    throw new ApiError(401, "post like not deleted");
+  }
+  const deletePostComment = await Comment.deleteMany({
+    community: new mongoose.Types.ObjectId(postId),
+  });
+  if (!deletePostComment) {
+    throw new ApiError(401, "post comment not deleted");
+  }
   const deletePost = await Community.findOneAndDelete({
     _id: postId,
     owner: user,
@@ -305,6 +402,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
   if (!deletePost) {
     throw new ApiError(401, "post not deleted");
   }
+
   return res
     .status(200)
     .json(new ApiResponse(200, "post deleted successfully"));
@@ -317,13 +415,16 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
   const LIMIT_PAGE_SIZE = 10;
   const DEFAULT_PAGE = 1; //i means a collection of 10 documents
   const { userId } = req.params;
+  console.log(req.params);
   const page = parseInt(req.query.page) || DEFAULT_PAGE;
   const limit = parseInt(req.query.limit) || LIMIT_PAGE_SIZE;
   if (!userId) {
     throw new ApiError(401, "user id not found in params");
   }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid user ID format");
+  }
   const skip = (page - 1) * limit; //it will give us the number of documents to skip
-  const options = { page: page, limit: limit, sort: { createdAt: -1 } };
 
   const posts = await Community.aggregate([
     {
@@ -334,7 +435,7 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
         from: "users",
         localField: "owner", //filed of community
         foreignField: "_id",
-        as: "PostCreatedBy",
+        as: "postCreatedBy",
         pipeline: [
           {
             $project: {
@@ -347,8 +448,54 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
         ],
       },
     },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "community",
+        as: "likedByUser",
+      },
+    },
+    {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "community",
+        as: "commentByUser",
+      },
+    },
+    {
+      $addFields: {
+        likeByUser: {
+          $size: "$likedByUser",
+        },
+        isLikeByUser: {
+          $cond: {
+            if: {
+              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeBy"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+        recentComment: {
+          $slice: ["$commentByUser", -1], //it will get only one comment which one is recent one}
+        },
+        postCreatedBy: {
+          $first: "$postCreatedBy",
+        },
+      },
+    },
+    { $skip: skip },
+    { $limit: limit },
   ]);
-  console.log(posts[0]);
+  console.log(posts);
+  if (!posts?.length > 0) {
+    throw new ApiError(401, "posts not found");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, posts, "all post successfully fetched"));
 });
 
 export {
