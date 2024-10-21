@@ -175,7 +175,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
   //get user id from params
   //check id is valid
-  const { userId } = req.params;
+  const userId = req.user?._id;
+  console.log(req.user?._id);
 
   if (!userId) {
     throw new ApiError(401, "user id not found in params");
