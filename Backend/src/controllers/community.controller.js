@@ -218,8 +218,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "comments",
-        localField: "_id",
-        foreignField: "community",
+        localField: "comment",
+        foreignField: "_id",
         as: "commentByUser",
       },
     },
@@ -245,7 +245,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
         },
       },
     },
-    { $limit: 1 },
   ]);
   console.log(posts);
   if (!posts?.length > 0) {

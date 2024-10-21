@@ -15,7 +15,8 @@ const router = Router();
 router
   .route("/createPost")
   .post(upload.single("media"), VerifyJwt, createTweet);
-router.route("/user/:userId").get(VerifyJwt, getUserTweets);
+
+router.route("/getUserTweet").get(VerifyJwt, getUserTweets);
 
 router
   .route("/:postId")
