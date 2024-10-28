@@ -2,19 +2,19 @@ import { Schema, model } from "mongoose";
 
 const likeSchema = new Schema(
   {
-    comment: {
+    commentId: {
       type: Schema.Types.ObjectId,
       ref: "Comment",
     },
-    video: {
+    videoId: {
       type: Schema.Types.ObjectId,
       ref: "Video",
     },
-    community: {
+    communityId: {
       type: Schema.Types.ObjectId,
       ref: "Community",
     },
-    likeBy: {
+    likeById: {
       type: Schema.Types.ObjectId,
       ref: "User",
     },

@@ -18,13 +18,17 @@ const commentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    likes: [
+    communityId: {
+      type: Schema.Types.ObjectId,
+      ref: "Community",
+    },
+    likeIds: [
       {
         type: Schema.Types.ObjectId,
         ref: "Like",
       },
     ],
-    comments: [
+    replyIds: [
       {
         type: Schema.Types.ObjectId,
         ref: "Comment",

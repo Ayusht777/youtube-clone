@@ -24,6 +24,6 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/videos", videoRoutes);
 app.use("/api/v1/community", communityRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-//http:localhost:8080//api/v1/users/register
+//http:localhost:8080/api/v1/users/register
 
 export { app };

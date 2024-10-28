@@ -218,9 +218,10 @@ const getUserTweets = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "comments",
-        localField: "comment",
-        foreignField: "_id",
-        as: "commentByUser",
+        localField: "_id",
+        foreignField: "post",
+        as: "nestedComments"
+
       },
     },
     {

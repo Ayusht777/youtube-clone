@@ -23,11 +23,11 @@ const communitySchema = new Schema(
       min: 10,
       max: 500,
     },
-    like: {
+    likeId: {
       type: Schema.Types.ObjectId,
       ref: "Like",
     },
-    comment: {
+    commentId: {
       type: Schema.Types.ObjectId,
       ref: "Comment",
     },

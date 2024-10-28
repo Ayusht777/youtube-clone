@@ -491,7 +491,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       $lookup: {
         from: "subscriptions",
         localField: "_id", //it will refer to the _id of the user object it is the field of current model which is user now
-        foreignField: "channel",
+        foreignField: "channelId",
         as: "subscribers", //lowercase name will be of model and become plural 's
       },
     },
@@ -500,7 +500,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         //it is for the youtuber who subscribed which channels
         from: "subscriptions",
         localField: "_id", //it will refer to the _id of the user object
-        foreignField: "subscriber",
+        foreignField: "subscriberId",
         as: "subscribedChannels", //lowercase name will be of model and become plural 's
       },
     },

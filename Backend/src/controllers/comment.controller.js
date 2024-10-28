@@ -20,6 +20,9 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
   // TODO: delete a comment
 });
+
+
+
 const addCommentToPost = asyncHandler(async (req, res) => {
   // TODO: get post id from params
   //get comment from body
@@ -38,18 +41,18 @@ const addCommentToPost = asyncHandler(async (req, res) => {
 
   if (!post) throw new ApiError(404, "post not found");
   const existedComment = await Comment.findOne({
-    post: postId,
+    CommunityId: postId,
     content: comment,
   });
   if (existedComment) throw new ApiError(400, "comment already exist");
   const addCommentToPostDB = await Comment.create({
     content: comment,
-    post: postId,
+    CommunityId: postId,
     owner: req.user._id,
   });
   if (!addCommentToPostDB) throw new ApiError(400, "comment not added");
   const commentDoc = await Comment.aggregate([
-    { $match: { post: new mongoose.Types.ObjectId(postId) } },
+    { $match: { CommunityId: new mongoose.Types.ObjectId(postId) } },
     {
       $lookup: {
         from: "users",
@@ -67,7 +70,7 @@ const addCommentToPost = asyncHandler(async (req, res) => {
       $lookup: {
         from: "likes",
         localField: "_id",
-        foreignField: "comment",
+        foreignField: "commentId",
         as: "LikedBy",
       },
     },
