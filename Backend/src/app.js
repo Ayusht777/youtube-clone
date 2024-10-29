@@ -19,11 +19,13 @@ import userRoutes from "./routes/user.routes.js";
 import videoRoutes from "./routes/video.routes.js";
 import communityRoutes from "./routes/community.routes.js";
 import subscriptionRoutes from "./routes/subscriptions.routes.js";
+import commentRoutes from "./routes/comment.routes.js";
 //Routes Declarations
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/videos", videoRoutes);
 app.use("/api/v1/community", communityRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+app.use("/api/v1/comments", commentRoutes);
 //http:localhost:8080/api/v1/users/register
 
 export { app };
