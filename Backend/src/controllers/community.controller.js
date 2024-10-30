@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { Community } from "../models/community.model.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
-import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -110,43 +109,6 @@ const createTweet = asyncHandler(async (req, res) => {
       },
     },
 
-    //pipeline to add likes
-    {
-      $lookup: {
-        from: "likes",
-        localField: "_id", //_id is the field in the community model
-        foreignField: "community", //THIS foreign field is the field in the like model
-        as: "likeByUser",
-      },
-    },
-    {
-      $lookup: {
-        from: "comments",
-        localField: "_id", //_id is the field in the community model
-        foreignField: "comment", //THIS foreign field is the field in the like model
-        as: "commentByUser",
-      },
-    },
-
-    {
-      $addFields: {
-        likeByUser: {
-          $size: "$likeByUser",
-        },
-        isLikeByUser: {
-          $cond: {
-            if: {
-              $in: [new mongoose.Types.ObjectId(user), "$likeByUser.likeBy"],
-            },
-            then: true,
-            else: false,
-          },
-        },
-        recentComment: {
-          $slice: ["$commentByUser", -1], //it will get only one comment which one is recent one}
-        },
-      },
-    },
     {
       $unwind: {
         //you can also use $ addFields
@@ -211,16 +173,17 @@ const getUserTweets = asyncHandler(async (req, res) => {
       $lookup: {
         from: "likes",
         localField: "_id",
-        foreignField: "community",
+        foreignField: "communityId",
         as: "likedByUser",
       },
     },
     {
       $lookup: {
         from: "comments",
-        localField: "comment",
-        foreignField: "_id",
-        as: "commentByUser",
+        localField: "_id",
+        foreignField: "communityId",
+        as: "commentByUser"
+
       },
     },
     {
@@ -231,7 +194,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
         isLikeByUser: {
           $cond: {
             if: {
-              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeBy"],
+              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeById"],
             },
             then: true,
             else: false,
@@ -383,14 +346,14 @@ const deleteTweet = asyncHandler(async (req, res) => {
     throw new ApiError(401, "post media not deleted on cloudinary");
   }
   const deletePostLike = await Like.deleteMany({
-    community: new mongoose.Types.ObjectId(postId),
+    communityId: new mongoose.Types.ObjectId(postId),
   });
   console.log(deletePostLike);
   if (!deletePostLike) {
     throw new ApiError(401, "post like not deleted");
   }
   const deletePostComment = await Comment.deleteMany({
-    community: new mongoose.Types.ObjectId(postId),
+    communityId: new mongoose.Types.ObjectId(postId),
   });
   if (!deletePostComment) {
     throw new ApiError(401, "post comment not deleted");
@@ -452,7 +415,7 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
       $lookup: {
         from: "likes",
         localField: "_id",
-        foreignField: "community",
+        foreignField: "communityId",
         as: "likedByUser",
       },
     },
@@ -460,7 +423,7 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
       $lookup: {
         from: "comments",
         localField: "_id",
-        foreignField: "community",
+        foreignField: "communityId",
         as: "commentByUser",
       },
     },
@@ -472,7 +435,7 @@ const getUserAllTweets = asyncHandler(async (req, res) => {
         isLikeByUser: {
           $cond: {
             if: {
-              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeBy"],
+              $in: [new mongoose.Types.ObjectId(userId), "$likedByUser.likeById"],
             },
             then: true,
             else: false,

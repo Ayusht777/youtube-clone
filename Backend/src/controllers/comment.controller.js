@@ -20,6 +20,9 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
   // TODO: delete a comment
 });
+
+
+
 const addCommentToPost = asyncHandler(async (req, res) => {
   // TODO: get post id from params
   //get comment from body
@@ -38,18 +41,18 @@ const addCommentToPost = asyncHandler(async (req, res) => {
 
   if (!post) throw new ApiError(404, "post not found");
   const existedComment = await Comment.findOne({
-    post: postId,
+    communityId: postId,
     content: comment,
   });
   if (existedComment) throw new ApiError(400, "comment already exist");
   const addCommentToPostDB = await Comment.create({
+    communityId: postId,
     content: comment,
-    post: postId,
     owner: req.user._id,
   });
   if (!addCommentToPostDB) throw new ApiError(400, "comment not added");
   const commentDoc = await Comment.aggregate([
-    { $match: { post: new mongoose.Types.ObjectId(postId) } },
+    { $match: { communityId: new mongoose.Types.ObjectId(postId) } },
     {
       $lookup: {
         from: "users",
@@ -67,7 +70,7 @@ const addCommentToPost = asyncHandler(async (req, res) => {
       $lookup: {
         from: "likes",
         localField: "_id",
-        foreignField: "comment",
+        foreignField: "commentId",
         as: "LikedBy",
       },
     },
@@ -80,7 +83,7 @@ const addCommentToPost = asyncHandler(async (req, res) => {
   if (!commentDoc) throw new ApiError(404, "comment not found");
   return res
     .status(200)
-    .json(200, new ApiResponse(commentDoc), "comment added successfully");
+    .json(new ApiResponse(200, commentDoc, "comment added successfully"));
 });
 
 const updateCommentToPost = asyncHandler(async (req, res) => {
@@ -89,29 +92,40 @@ const updateCommentToPost = asyncHandler(async (req, res) => {
   //get comment from body and req.user._id
   //validate comment id is in db or not and belongs to user or not
   //update comment in db
-  const { commentId } = req.params;
+  const { commentId, communityId } = req.query;
   const { comment } = req.body;
-  console.log(commentId, comment);
-  if (!commentId || !comment?.length)
-    throw new ApiError(400, "comment id is required");
-  const existingComments = await Comment.findOne({
-    _id: commentId,
-    content: comment,
-  });
 
-  if (existingComments)
-    throw new ApiError(400, "comment already exist with same content");
+  if (!commentId?.trim() || !communityId?.trim()) {
+    throw new ApiError(400, "Invalid comment or community ID");
+  }
+
+  if (!comment?.trim() || comment.length < 10 || comment.length > 500) {
+    throw new ApiError(400, "Comment must be between 10 and 500 characters");
+  }
+
   const updateComment = await Comment.findByIdAndUpdate(
-    commentId,
-    { content: comment },
-    { new: true }
-  );
+    {
+      _id: commentId,
+      owner: req.user._id,
+      communityId: communityId
+    },
+    {
+      content: comment,
+    },
+    { new: true, select: { _id: 1, content: 1, updatedAt: 1 } }
+  ).lean()
+
+  // console.log(updateComment instanceof mongoose.Document);
+  //response  converting mongodb object to js object
+
+  // console.log(updateComment);
 
   if (!updateComment) throw new ApiError(404, "comment not updated");
   return res
     .status(200)
-    .json(200, new ApiResponse(updateComment), "comment updated successfully");
+    .json(new ApiResponse(200,updateComment,"comment updated successfully"));
 });
+
 const deleteCommentToPost = asyncHandler((req, res) => {
   // TODO: delete a comment on a post
   // get comment id from params

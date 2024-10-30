@@ -48,7 +48,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 const optionsForAccessTokenCookie = {
   httpOnly: true,
   secure: true,
-  maxAge: 15 * 60 * 1000, // 15 minutes
+  maxAge: 60 * 60 * 1000, // 60 minutes
 };
 const optionsForRefreshTokenCookie = {
   httpOnly: true,
@@ -491,7 +491,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       $lookup: {
         from: "subscriptions",
         localField: "_id", //it will refer to the _id of the user object it is the field of current model which is user now
-        foreignField: "channel",
+        foreignField: "channelId",
         as: "subscribers", //lowercase name will be of model and become plural 's
       },
     },
@@ -500,7 +500,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         //it is for the youtuber who subscribed which channels
         from: "subscriptions",
         localField: "_id", //it will refer to the _id of the user object
-        foreignField: "subscriber",
+        foreignField: "subscriberId",
         as: "subscribedChannels", //lowercase name will be of model and become plural 's
       },
     },
