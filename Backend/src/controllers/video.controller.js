@@ -135,6 +135,14 @@ const getVideoById = asyncHandler(async (req, res) => {
       $match: { _id: new mongoose.Types.ObjectId(videoId), isPublished: true },
     },
     {
+      $lookup:{
+        from:"users",
+        localField:"owner",
+        foreignField:"_id",
+        as:"user"
+      }
+    },
+    {
       $lookup: {
         from: "comments",
         localField: "_id",
