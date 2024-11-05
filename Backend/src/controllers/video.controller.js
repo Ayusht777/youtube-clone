@@ -135,12 +135,32 @@ const getVideoById = asyncHandler(async (req, res) => {
       $match: { _id: new mongoose.Types.ObjectId(videoId), isPublished: true },
     },
     {
-      $lookup:{
-        from:"users",
-        localField:"owner",
-        foreignField:"_id",
-        as:"user"
-      }
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $lookup: {
+              from: "subscriptions",
+              localField: "_id",
+              foreignField: "subscriberId",
+              as: "subsribers",
+            },
+          },
+        ],
+      },
+    },
+    {
+      $project: {
+        owner: {
+          _id: 1,
+          userName: 1,
+          avatar: { $first: "$owner.avatar.url" },
+          subsribers: { $size: "$owner.subsribers" },
+        },
+      },
     },
     {
       $lookup: {
@@ -151,29 +171,53 @@ const getVideoById = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "ownerOfComment",
+            },
+          },
+          {
+            $lookup: {
               from: "likes",
               localField: "_id",
               foreignField: "commentId",
               as: "likesByUsersOnComment",
             },
           },
+          {
+            $project: {
+              ownerOfComment: {
+                _id: 1,
+                userName: 1,
+                avatar: { $first: "$ownerOfComment.avatar.url" },
+              },
+              likesCount: { $size: "$likesByUsersOnComment" },
+            },
+          },
         ],
       },
+    },
+    {
+      $limit: 10,
     },
     {
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "videoId",
-        as: "likesByUsers",
+        as: "likesByUsersOnVideo",
+        pipeline:[{
+          $addFields:{
+          likebyUser:{
+            $cond:{
+              $if:{$in:["likes","l"]}
+            }
+          }  
+          }
+        }]
       },
     },
-
-    // {
-    //   $project:{
-    //     likesCount:{$size:"$likesByUsers"},
-    //   }
-    // }
   ]);
   console.log(video);
   return res.status(200).json(video);
