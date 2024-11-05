@@ -131,39 +131,47 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(406, "video id is required");
   }
 
-  const videoViewsUpdate = await Video.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(videoId),
-        isPublished: true,
+  const isVideo = await Video.findOne({ _id: videoId, isPublished: true });
+
+  if (!isVideo) {
+    throw new ApiError(406, "video is not published");
+  }
+  if (!isVideo?.viewers?.includes(userId)) {
+    const videoViewsUpdate = await Video.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(videoId),
+          isPublished: true,
+        },
       },
-    },
-    { $addFields: { hasViewed: { $in: [userId, "$viewers"] } } },
-    {
-      $set: {
-        viewers: {
-          $cond: {
-            if: { $eq: ["$hasViewed", false] }, // if hasViewed is false ->[false,false == true] then add the userId to viewers array else return the viewers array
-            then: { $concatArrays: ["$viewers", [userId]] },
-            else: "$viewers",
+      { $addFields: { hasViewed: { $in: [userId, "$viewers"] } } },
+      {
+        $set: {
+          viewers: {
+            $cond: {
+              if: { $eq: ["$hasViewed", false] }, // if hasViewed is false ->[false,false == true] then add the userId to viewers array else return the viewers array
+              then: { $concatArrays: ["$viewers", [userId]] },
+              else: "$viewers",
+            },
+          },
+          views: {
+            $cond: {
+              if: { $eq: ["$hasViewed", false] },
+              then: { $add: ["$views", 1] },
+              else: "$views",
+            },
           },
         },
-        views:{
-          $cond:{
-            if:{$eq:["$hasViewed", false]},
-            then:{$add:["$views",1]},
-            else:"$views"
-          }
-        }
       },
-    },
-    {$merge:{
-      into:"videos",
-      whenMatched:"replace",
-      whenNotMatched:"discard"
-    }}
-  ]);
-  console.log("->>",videoViewsUpdate);
+      {
+        $merge: {
+          into: "videos",
+          whenMatched: "replace",
+          whenNotMatched: "discard",
+        },
+      },
+    ]);
+  }
 
   const video = await Video.aggregate([
     //Stage 1 : Matching the VideoId in Video Collection
