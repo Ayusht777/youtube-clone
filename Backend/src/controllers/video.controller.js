@@ -130,6 +130,41 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!videoId.trim() === "" || !isValidObjectId(videoId)) {
     throw new ApiError(406, "video id is required");
   }
+
+  const videoViewsUpdate = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+        isPublished: true,
+      },
+    },
+    { $addFields: { hasViewed: { $in: [userId, "$viewers"] } } },
+    {
+      $set: {
+        viewers: {
+          $cond: {
+            if: { $eq: ["$hasViewed", false] }, // if hasViewed is false ->[false,false == true] then add the userId to viewers array else return the viewers array
+            then: { $concatArrays: ["$viewers", [userId]] },
+            else: "$viewers",
+          },
+        },
+        views:{
+          $cond:{
+            if:{$eq:["$hasViewed", false]},
+            then:{$add:["$views",1]},
+            else:"$views"
+          }
+        }
+      },
+    },
+    {$merge:{
+      into:"videos",
+      whenMatched:"replace",
+      whenNotMatched:"discard"
+    }}
+  ]);
+  console.log("->>",videoViewsUpdate);
+
   const video = await Video.aggregate([
     //Stage 1 : Matching the VideoId in Video Collection
     {
@@ -143,7 +178,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         foreignField: "_id",
         as: "owner",
         pipeline: [
-          //Stage 1 : Finding the Subscribers of the Owner / Channel 
+          //Stage 1 : Finding the Subscribers of the Owner / Channel
           {
             $lookup: {
               from: "subscriptions",
@@ -167,7 +202,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
     },
-    
+
     {
       $project: {
         owner: {
@@ -175,12 +210,11 @@ const getVideoById = asyncHandler(async (req, res) => {
           userName: 1,
           avatar: { $first: "$owner.avatar.url" },
           subsribers: { $size: "$owner.subscribers" },
-         
         },
         isSubscribed: 1,
       },
     },
-    
+
     {
       $lookup: {
         from: "comments",
@@ -221,7 +255,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         ],
       },
     },
-    
+
     {
       $lookup: {
         from: "likes",
