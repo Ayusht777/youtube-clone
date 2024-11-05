@@ -126,14 +126,16 @@ const getVideoById = asyncHandler(async (req, res) => {
   //if published then return videourl , thumbnailurl, title, description
 
   const { videoId } = req.params;
-  console.log(videoId);
-  if (!videoId.trim() === "" || !videoId) {
+  const userId = req.user._id;
+  if (!videoId.trim() === "" || !isValidObjectId(videoId)) {
     throw new ApiError(406, "video id is required");
   }
   const video = await Video.aggregate([
+    //Stage 1 : Matching the VideoId in Video Collection
     {
       $match: { _id: new mongoose.Types.ObjectId(videoId), isPublished: true },
     },
+    //Stage 2 : Finding the Owner of the Video
     {
       $lookup: {
         from: "users",
@@ -141,27 +143,44 @@ const getVideoById = asyncHandler(async (req, res) => {
         foreignField: "_id",
         as: "owner",
         pipeline: [
+          //Stage 1 : Finding the Subscribers of the Owner / Channel 
           {
             $lookup: {
               from: "subscriptions",
               localField: "_id",
               foreignField: "subscriberId",
-              as: "subsribers",
+              as: "subscribers",
             },
           },
         ],
       },
     },
+
+    {
+      $addFields: {
+        isSubscribed: {
+          $cond: {
+            if: { in: [userId, "$subscribers.subscriberId"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    
     {
       $project: {
         owner: {
           _id: 1,
           userName: 1,
           avatar: { $first: "$owner.avatar.url" },
-          subsribers: { $size: "$owner.subsribers" },
+          subsribers: { $size: "$owner.subscribers" },
+         
         },
+        isSubscribed: 1,
       },
     },
+    
     {
       $lookup: {
         from: "comments",
@@ -186,7 +205,11 @@ const getVideoById = asyncHandler(async (req, res) => {
             },
           },
           {
+            $limit: 10,
+          },
+          {
             $project: {
+              content: 1,
               ownerOfComment: {
                 _id: 1,
                 userName: 1,
@@ -198,28 +221,32 @@ const getVideoById = asyncHandler(async (req, res) => {
         ],
       },
     },
-    {
-      $limit: 10,
-    },
+    
     {
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "videoId",
         as: "likesByUsersOnVideo",
-        pipeline:[{
-          $addFields:{
-          likebyUser:{
-            $cond:{
-              $if:{$in:["likes","l"]}
-            }
-          }  
-          }
-        }]
+        pipeline: [{ $project: { _id: 0, likeById: 1 } }],
+      },
+    },
+    {
+      $addFields: {
+        likesCountOnVideo: {
+          $size: "$likesByUsersOnVideo.likeById",
+        },
+        isVideoLikedByUser: {
+          $cond: {
+            if: { in: [userId, "$likesByUsersOnVideo.likeById"] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
   ]);
-  console.log(video);
+
   return res.status(200).json(video);
 });
 
