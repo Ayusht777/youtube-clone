@@ -136,7 +136,7 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!isVideo) {
     throw new ApiError(406, "video is not published");
   }
-  if (!isVideo?.viewers?.includes(userId)) {
+  if (isVideo.viewers.includes(userId)) {
     const videoViewsUpdate = await Video.aggregate([
       {
         $match: {
@@ -171,6 +171,52 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
     ]);
+
+    const updateWatchHistory = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $addFields: {
+          hasInWatchHistory: {
+            $in: [
+              new mongoose.Types.ObjectId(videoId),
+              "$watchHistory.videoId",
+            ],
+          },
+        },
+      },
+      {
+        $set: {
+          watchHistory: {
+            $cond: {
+              if: { $eq: ["$hasInWatchHistory", false] },
+              then: {
+                $concatArrays: [
+                  "$watchHistory",
+                  [
+                    {
+                      videoId: new mongoose.Types.ObjectId(videoId),
+                      lastWatchedAt: new Date(),
+                    },
+                  ],
+                ],
+              },
+              else: "$watchHistory", // Ensure that the else case keeps the existing watch history
+            },
+          },
+        },
+      },
+      {
+        $merge: {
+          into: "users",
+          whenMatched: "replace",
+          whenNotMatched: "discard",
+        },
+      },
+      
+    ]);
+    
   }
 
   const video = await Video.aggregate([
