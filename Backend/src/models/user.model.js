@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, isValidObjectId, model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 const userSchema = new Schema(
@@ -39,8 +39,8 @@ const userSchema = new Schema(
     },
     watchHistory: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Video",
+        videoId: { type: Schema.Types.ObjectId, ref: "Video" },
+        lastWatchedAt: { type: Date, default: Date.now }, 
       },
     ],
     password: {
@@ -89,5 +89,8 @@ userSchema.methods.generateRefreshToken = function () {
     }
   );
 };
+
+
+
 
 export const User = model("User", userSchema);

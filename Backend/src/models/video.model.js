@@ -39,6 +39,12 @@ const videoSchema = new Schema(
       type: Number,
       default: 0,
     },
+    //to track unqiue viewes
+    viewers:{
+      type:[Schema.Types.ObjectId],
+      ref:"User",
+      default:[]
+    },
     isPublished: {
       type: Boolean,
       required: true,
