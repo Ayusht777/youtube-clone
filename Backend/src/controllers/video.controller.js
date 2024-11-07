@@ -136,7 +136,7 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!isVideo) {
     throw new ApiError(406, "video is not published");
   }
-  if (isVideo.viewers.includes(userId)) {
+  if (!isVideo.viewers.includes(userId)) {
     const videoViewsUpdate = await Video.aggregate([
       {
         $match: {
@@ -163,6 +163,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           },
         },
       },
+      { $unset: "hasViewed" },
       {
         $merge: {
           into: "videos",
@@ -171,170 +172,158 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
     ]);
-
-    const updateWatchHistory = await User.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(userId) },
-      },
-      {
-        $addFields: {
-          hasInWatchHistory: {
-            $in: [
-              new mongoose.Types.ObjectId(videoId),
-              "$watchHistory.videoId",
-            ],
-          },
-        },
-      },
-      {
-        $set: {
-          watchHistory: {
-            $cond: {
-              if: { $eq: ["$hasInWatchHistory", false] },
-              then: {
-                $concatArrays: [
-                  "$watchHistory",
-                  [
-                    {
-                      videoId: new mongoose.Types.ObjectId(videoId),
-                      lastWatchedAt: new Date(),
-                    },
-                  ],
-                ],
-              },
-              else: "$watchHistory", // Ensure that the else case keeps the existing watch history
-            },
-          },
-        },
-      },
-      {
-        $merge: {
-          into: "users",
-          whenMatched: "replace",
-          whenNotMatched: "discard",
-        },
-      },
-      
-    ]);
-    
   }
 
+  const updateWatchHistory = await User.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $addFields: {
+        hasInWatchHistory: {
+          $in: [new mongoose.Types.ObjectId(videoId), "$watchHistory.videoId"],
+        },
+      },
+    },
+    {
+      $set: {
+        watchHistory: {
+          $cond: {
+            if: { $eq: ["$hasInWatchHistory", false] },
+            then: {
+              $concatArrays: [
+                "$watchHistory",
+                [
+                  {
+                    videoId: new mongoose.Types.ObjectId(videoId),
+                    lastWatchedAt: new Date(),
+                  },
+                ],
+              ],
+            },
+            else: "$watchHistory", // Ensure that the else case keeps the existing watch history
+          },
+        },
+      },
+    },
+    {
+      $unset: "hasInWatchHistory",
+    },
+    {
+      $merge: {
+        into: "users",
+        whenMatched: "replace",
+        whenNotMatched: "discard",
+      },
+    },
+  ]);
+
   const video = await Video.aggregate([
-    //Stage 1 : Matching the VideoId in Video Collection
     {
       $match: { _id: new mongoose.Types.ObjectId(videoId), isPublished: true },
     },
-    //Stage 2 : Finding the Owner of the Video
+    {
+      $project: {
+        videoFile: "$videoFile.url",
+        thumbnail: "$thumbnail.url",
+        title: 1,
+        description: 1,
+        views: 1,
+        owner: 1,
+      },
+    },
     {
       $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
-        as: "owner",
-        pipeline: [
-          //Stage 1 : Finding the Subscribers of the Owner / Channel
-          {
-            $lookup: {
-              from: "subscriptions",
-              localField: "_id",
-              foreignField: "subscriberId",
-              as: "subscribers",
-            },
-          },
-        ],
+        as: "channelOwner",
+        pipeline: [{ $project: { userName: 1, avatar: "$avatar.url" } }],
       },
     },
-
+    { $unwind: "$channelOwner" },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "owner",
+        foreignField: "channelId",
+        as: "subscribers",
+        pipeline: [{ $project: { subscriberId: 1 } }],
+      },
+    },
     {
       $addFields: {
-        isSubscribed: {
-          $cond: {
-            if: { in: [userId, "$subscribers.subscriberId"] },
-            then: true,
-            else: false,
-          },
-        },
+        isSubscribed: { $in: [userId, "$subscribers.subscriberId"] },
+        subscribers: { $size: "$subscribers" },
       },
     },
-
-    {
-      $project: {
-        owner: {
-          _id: 1,
-          userName: 1,
-          avatar: { $first: "$owner.avatar.url" },
-          subsribers: { $size: "$owner.subscribers" },
-        },
-        isSubscribed: 1,
-      },
-    },
-
     {
       $lookup: {
         from: "comments",
         localField: "_id",
         foreignField: "video",
-        as: "commentByUsers",
+        as: "commentsOnThisVideo",
         pipeline: [
+          { $sort: { updatedAt: -1 } },
+          { $limit: 10 },
           {
             $lookup: {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "ownerOfComment",
+              as: "commentedBy",
+              pipeline: [
+                { $project: { userName: 1, avatar: "$avatar.url", _id: 0 } },
+              ],
             },
           },
+          { $unwind: "$commentedBy" },
+
           {
             $lookup: {
               from: "likes",
               localField: "_id",
               foreignField: "commentId",
-              as: "likesByUsersOnComment",
+              as: "likesOnComment",
+              pipeline: [{ $project: { likeById: 1 } }],
             },
           },
           {
-            $limit: 10,
+            $addFields: {
+              likeCount: { $size: "$likesOnComment" },
+              isLikedByUser: { $in: [userId, "$likesOnComment.likeById"] },
+            },
           },
           {
             $project: {
+              _id: 1,
               content: 1,
-              ownerOfComment: {
-                _id: 1,
-                userName: 1,
-                avatar: { $first: "$ownerOfComment.avatar.url" },
-              },
-              likesCount: { $size: "$likesByUsersOnComment" },
+              commentBy: "$commentedBy.userName",
+              commentByAvatar: "$commentedBy.avatar",
+              likeCount: 1,
+              isLikedByUser: 1,
             },
           },
         ],
       },
     },
-
     {
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "videoId",
-        as: "likesByUsersOnVideo",
-        pipeline: [{ $project: { _id: 0, likeById: 1 } }],
+        as: "likesOnVideo",
+        pipeline: [{ $project: { likeById: 1, _id: 0 } }],
       },
     },
     {
       $addFields: {
-        likesCountOnVideo: {
-          $size: "$likesByUsersOnVideo.likeById",
-        },
-        isVideoLikedByUser: {
-          $cond: {
-            if: { in: [userId, "$likesByUsersOnVideo.likeById"] },
-            then: true,
-            else: false,
-          },
-        },
+        likesCountOnVideo: { $size: "$likesOnVideo.likeById" },
+        isVideoLikedByUser: { $in: [userId, "$likesOnVideo.likeById"] },
       },
     },
+    { $unset: "likesOnVideo" },
   ]);
-
   return res.status(200).json(video);
 });
 
