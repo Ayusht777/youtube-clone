@@ -1,6 +1,7 @@
-import { Schema, isValidObjectId, model } from "mongoose";
+import { Schema, model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import {config} from  "../config/config.js";
 const userSchema = new Schema(
   {
     userName: {
@@ -71,7 +72,7 @@ userSchema.methods.generateAccessToken = function () {
       fullName: this.fullName,
       email: this.email,
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    config.access_token_secret,
     {
       expiresIn: "1h",
     }
@@ -83,7 +84,7 @@ userSchema.methods.generateRefreshToken = function () {
     {
       _id: this._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
+    config.refresh_token_secret,
     {
       expiresIn: "7d",
     }

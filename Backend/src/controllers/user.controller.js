@@ -8,6 +8,7 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { Video } from "../models/video.model.js";
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const passwordRegex =
   /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
@@ -544,55 +545,80 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getUserWatchHistory = asyncHandler(async (req, res) => {
-  const user = await User.aggregate([
+  const userId = req.user?._id;
+  if (!userId) {
+    throw new ApiError(400, "userId is required in params");
+  }
+  const watchHistory = await User.aggregate([
     {
       $match: {
-        _id: new mongoose.Types.ObjectId(req.user._id),
+        _id: new mongoose.Types.ObjectId(userId),
+        "watchHistory.0": { $exists: true },
       },
+    },
+    {
+      $project: {
+        _id: 0,
+        watchHistory: 1,
+      },
+    },
+    {$unwind: "$watchHistory"},
+    {
+      $sort:{"watchHistory.lastWatchedAt": -1}
     },
     {
       $lookup: {
         from: "videos",
-        localField: "watchHistory",
+        localField: "watchHistory.videoId",
         foreignField: "_id",
-        as: "watchHistory",
+        as: "video",
         pipeline: [
           {
             $lookup: {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "owner",
+              as: "channelOwner",
               pipeline: [
                 {
                   $project: {
+                    _id: 1,
                     userName: 1,
-                    fullName: 1,
-                    avatar: 1,
                   },
                 },
               ],
             },
           },
           {
-            $addFields: {
-              owner: {
-                $first: "$owner", // it is used to give data in object not in [{}]
-              },
-            },
+            $unwind: "$channelOwner",
           },
         ],
       },
     },
+    {
+      $project: {
+        VideoId: "$watchHistory.videoId",
+        thumbnail: {$first :"$video.thumbnail.url"},
+        title: {$first:"$video.title"},
+        description: {$first:"$video.description"},
+        channelOwner: {$first:"$video.channelOwner.userName"},
+        channelOwnerId: {$first:"$video.channelOwner._id"},
+        views: {$first:"$video.views"},
+        lastWatchedAt: "$watchHistory.lastWatchedAt",
+
+
+
+      },
+    }
+    
   ]);
-  // console.log(user);
-  if (!user?.length) {
-    throw new ApiError(404, "User does not existed");
+  if (!watchHistory?.length) {
+    throw new ApiError(404, "watchHistory does not existed");
   }
   return res
     .status(200)
-    .send(
-      new ApiResponse(200, user[0].watchHistory, "User fetched successfully")
+    .json(
+      new ApiResponse(200, watchHistory, "watchHistory fetched successfully")
     );
 });
 export {
