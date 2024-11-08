@@ -5,6 +5,7 @@ import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Community } from "../models/community.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   //TODO: toggle like on video
@@ -27,7 +28,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     videoId: videoId,
     likeById: user,
   });
-  
+
   if (!deletedLiked) {
     const createLike = await Like.create({
       videoId: videoId,
@@ -40,7 +41,11 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { likeId: createLike?._id, state: true }, "like added")
+        new ApiResponse(
+          200,
+          { likeId: createLike?._id, state: true },
+          "like added"
+        )
       );
   }
 
@@ -56,12 +61,11 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   // for toggle like on comment just delete a like object and save it in db
   const { commentId } = req.params;
 
-
   const user = req.user?._id;
   if (!commentId.trim() === "" || !commentId || !isValidObjectId(commentId)) {
     throw new ApiError(406, "video id is required");
   }
-  const comment = await Comment.findOne({ _id: commentId});
+  const comment = await Comment.findOne({ _id: commentId });
 
   if (!comment) {
     throw new ApiError(404, "video not found or is not published");
@@ -71,7 +75,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     commentId: commentId,
     likeById: user,
   });
-  
+
   if (!deletedLiked) {
     const createLike = await Like.create({
       commentId: commentId,
@@ -84,7 +88,11 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { likeId: createLike?._id, state: true }, "like added")
+        new ApiResponse(
+          200,
+          { likeId: createLike?._id, state: true },
+          "like added"
+        )
       );
   }
 
@@ -94,8 +102,34 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
-  const { tweetId } = req.params;
-  //TODO: toggle like on tweet
+  //TODO: toggle like on tweet / commuity post
+  //check if community post  is valid
+  //if yes then toggle like on community just create a like object and save it in db
+  // for toggle like on commuity just delete a like object and save it in db
+  const { communityId } = req.params;
+  const user = req.user?._id;
+  if (!communityId.trim() === "" || !communityId || !isValidObjectId(communityId)) {
+    throw new ApiError(406, "video id is required");
+  }
+  const community = await Community.findOne({ _id: communityId });
+  if(!community){
+    throw new ApiError(404, "community Post not found");
+  }
+  const deletedLiked = await Like.findOneAndDelete({
+    communityId: communityId,
+    likeById: user,
+  });
+  if (!deletedLiked) {
+    const createLike = await Like.create({
+      communityId: communityId,
+      likeById: user,
+    });
+    if (!createLike) {
+      throw new ApiError(404, "like not created");
+    }
+    return res.status(200).json(new ApiResponse(200, { likeId: createLike?._id, state: true }, "like added"));
+  }
+  return res.status(200).json(new ApiResponse(200, { likeId: null, state: false }, "like removed"));
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
