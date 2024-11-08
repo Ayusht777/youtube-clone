@@ -40,7 +40,17 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+  // TODO: get subscriber list of a channel from channelId
+  // GET and Validate channelId
+
   const { channelId } = req.params;
+  console.log(channelId);
+  if (!channelId || !isValidObjectId(channelId)) {
+    throw new ApiError(406, "channel id is required");
+  }
+  const channelSubscriber = await Subscription.aggregate([{$match:{channelId:channelId}}])
+  console.log(channelSubscriber);
+
 });
 
 // controller to return channel list to which user has subscribed

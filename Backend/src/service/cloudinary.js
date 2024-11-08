@@ -1,11 +1,11 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { ApiError } from "../utils/ApiError.js";
-
+import { config } from "../config/config.js";
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_API_KEY,
-  api_secret: process.env.CLOUD_API_SECRET,
+  cloud_name: config.cloud_api_name,
+  api_key: config.cloud_api_key,
+  api_secret: config.cloud_api_secret,
 });
 
 const uploadFileCloudinary = async (localFilePath) => {

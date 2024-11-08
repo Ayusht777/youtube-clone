@@ -324,7 +324,10 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     { $unset: "likesOnVideo" },
   ]);
-  return res.status(200).json(video);
+  if(!video.length){
+    throw (new ApiError(500, "Unable to Retrieve Video"));
+  }
+  return res.status(200).json(new ApiResponse(200,video[0], "Video Retrieved Successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
