@@ -108,11 +108,15 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   // for toggle like on commuity just delete a like object and save it in db
   const { communityId } = req.params;
   const user = req.user?._id;
-  if (!communityId.trim() === "" || !communityId || !isValidObjectId(communityId)) {
+  if (
+    !communityId.trim() === "" ||
+    !communityId ||
+    !isValidObjectId(communityId)
+  ) {
     throw new ApiError(406, "video id is required");
   }
   const community = await Community.findOne({ _id: communityId });
-  if(!community){
+  if (!community) {
     throw new ApiError(404, "community Post not found");
   }
   const deletedLiked = await Like.findOneAndDelete({
@@ -127,13 +131,103 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     if (!createLike) {
       throw new ApiError(404, "like not created");
     }
-    return res.status(200).json(new ApiResponse(200, { likeId: createLike?._id, state: true }, "like added"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { likeId: createLike?._id, state: true },
+          "like added"
+        )
+      );
   }
-  return res.status(200).json(new ApiResponse(200, { likeId: null, state: false }, "like removed"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { likeId: null, state: false }, "like removed"));
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
   //TODO: get all liked videos
+  const userId = req.user?._id;
+  if (!userId) {
+    throw new ApiError(404, "user not found");
+  }
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const likedVideosAggeration = [
+    { $match: { likeById: userId, videoId: { $exists: true } } },
+    { $sort: { updatedAt: -1 } },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videoId",
+        foreignField: "_id",
+        as: "video",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 0,
+                    userName: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: "$owner",
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$video",
+    },
+    {
+      $project: {
+        _id: 0,
+        videoId: "$video._id",
+        videoTitle: "$video.title",
+        videoThumbnail: "$video.thumbnail.url",
+        videoOwner: "$video.owner.userName",
+        videoViews: "$video.views",
+        createdAt: "$video.createdAt",
+      },
+    },
+  ];
+  //syntax pipeline , options
+  const likeVideoWithPagination = await Like.aggregatePaginate(
+    Like.aggregate(likedVideosAggeration),
+    {
+      page,
+      limit,
+    }
+  );
+
+  console.log(likeVideoWithPagination);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        likedVideos: likeVideoWithPagination.docs,
+        pagination: {
+          totalLikedVideos: likeVideoWithPagination.totalDocs,
+          totalPages: likeVideoWithPagination.totalPages,
+          currentPage: likeVideoWithPagination.page,
+          pageSize: likeVideoWithPagination.limit,
+        },
+      },
+      "liked videos fetched successfully"
+    )
+  );
 });
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
