@@ -1,4 +1,4 @@
-import mongoose, { connect } from "mongoose";
+import mongoose, { connect, isValidObjectId } from "mongoose";
 import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -10,7 +10,76 @@ import { Like } from "../models/like.model.js";
 const getVideoComments = asyncHandler(async (req, res) => {
   //TODO: get all comments for a video
   const { videoId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(400, "video id is required");
+  }
+  const paginatedCommentsPipeline = [
+    {
+      $match: { video: new mongoose.Types.ObjectId(videoId)},
+    },
+    {
+      $lookup:{
+        from:"users",
+        localField:"owner",
+        foreignField:"_id",
+        as:"commentOwner",
+        pipeline:[
+          {
+            $project:{
+              _id:1,
+              name:1,
+              avatar:"$avatar.url",
+            }
+          }
+        ]
+      }
+    },
+    {
+    $unwind:"$commentOwner"
+    },
+    {
+      $lookup:{
+        from:"likes",
+        localField:"_id",
+        foreignField:"commentId",
+        as:"likes",
+      }
+    },
+    {
+      $project:{
+        content:1,
+        commentOwner:1,
+        isLikedComment :{
+          $in:[new mongoose.Types.ObjectId(req.user?._id), "$likes.likeById"],
+        }
+      ,
+      likesCounts:{
+        $cond:{
+          if:{$isArray:"$likes"},
+          then:{$size:"$likes"},
+          else:0
+        }
+      }}
+
+    }
+    
+  ];
+  const paginatedPipelineOptions = {
+    page: page,
+    limit: limit,
+  };
+  const comments = await Comment.aggregatePaginate(
+    paginatedCommentsPipeline,
+    paginatedPipelineOptions
+  );
+
+  if (!comments) {
+    throw new ApiError(404, "No Comments found On This Video");
+  }
+  return res.status(200).json(new ApiResponse(200, comments, "comments found"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
@@ -53,10 +122,62 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
   // TODO: update a comment
+  //GET comment id from params
+  // validate comment id then
+  //find comment in db and update it
+  //send response
+  const { commentId } = req.params;
+  const { content } = req.body;
+
+  if (!commentId || !isValidObjectId(commentId)) {
+    throw new ApiError(400, "comment Id is required");
+  }
+  if (!content && !content?.trim() === "") {
+    throw new ApiError(400, "comment is required");
+  }
+
+  const owner = req.user?._id;
+
+  const comment = await Comment.findByIdAndUpdate(
+    {
+      _id: commentId,
+      owner: owner,
+    },
+    {
+      content: content,
+    },
+    {
+      new: true,
+    }
+  );
+  if (!comment) throw new ApiError(404, "comment not found");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comment, "comment updated successfully"));
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
   // TODO: delete a comment
+  //get comment id from params
+  // validate comment id
+  //find comment in db and then based on it delete likes first then comments
+  //send response
+  const { commentId } = req.params;
+  if (!commentId || !isValidObjectId(commentId)) {
+    throw new ApiError(400, "comment id is required");
+  }
+  const commentDelete = await Comment.findByIdAndDelete({
+    _id: commentId,
+    owner: req.user._id,
+  });
+  if (!commentDelete) throw new ApiError(404, "comment not found");
+  const deleteLikes = await Like.deleteMany({
+    comment: commentId,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, commentDelete, "comment deleted successfully"));
 });
 
 const addCommentToPost = asyncHandler(async (req, res) => {
