@@ -8,6 +8,9 @@ import {
   uploadFileCloudinary,
   deleteFileFromCloudinary,
 } from "../service/cloudinary.js";
+import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
+
 
 const MIN_IMAGE_FILE_SIZE = 20 * 1024; // 20 KB
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -394,12 +397,43 @@ const deleteVideo = asyncHandler(async (req, res) => {
   if (!video) {
     throw new ApiError(404, "video not found");
   }
-  // const deleteVideoFromCloudinary = await Promise.allSettled(
-  //   deleteFileFromCloudinary(video.video.publicId),
-  //   deleteFileFromCloudinary(video.thumbnail.publicId)
-  // );
-  
 
+  const deleteVideoOnCloudinary = await deleteFileFromCloudinary(
+    video.videoFile.publicId
+  );
+  if (!deleteVideoOnCloudinary) {
+    throw new ApiError(500, "Unable to delete video from cloudinary");
+  }
+  const deleteThumbnailOnCloudinary = await deleteFileFromCloudinary(video.thumbnail.publicId);
+  if (!deleteThumbnailOnCloudinary) {
+    throw new ApiError(500, "Unable to delete thumbnail from cloudinary");
+  }
+  const documentNames = ["Likes", "Comments", "Video"];
+
+  const deleteVideoAndRealtedDocuments = await Promise.allSettled([
+    Like.deleteMany({ videoId: videoId }),
+    Comment.deleteMany({ video: videoId }),
+    Video.deleteOne({ _id: videoId }),
+  ]);
+
+  deleteVideoAndRealtedDocuments.forEach((result, index) => {
+    if (result.status !== "fulfilled") {
+      throw new ApiError(
+        500,
+        `Failed to delete ${documentNames[index]}: ${result.reason?.message || "Unknown error"}`
+      );
+    }
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { deleteVideo: { videoId, status: true } },
+        "Video deleted successfully"
+      )
+    );
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
