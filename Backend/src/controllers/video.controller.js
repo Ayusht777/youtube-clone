@@ -4,7 +4,10 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadFileCloudinary } from "../service/cloudinary.js";
+import {
+  uploadFileCloudinary,
+  deleteFileFromCloudinary,
+} from "../service/cloudinary.js";
 
 const MIN_IMAGE_FILE_SIZE = 20 * 1024; // 20 KB
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -48,14 +51,14 @@ const publishAVideo = asyncHandler(async (req, res) => {
   //send response
   const { title, description } = req.body;
 
-  if ((title.trim() || description.trim()) === "") {
-    throw new ApiError(406, "title and description is required");
+  if (!title?.trim() && !description?.trim()) {
+    throw new ApiError(406, "title and description are required");
   }
-  if (title.trim().length < 3) {
-    throw new ApiError(411, "title should be at least 3 letters");
+  if (title?.trim() && title.trim().length < 3) {
+    throw new ApiError(411, "title should be at least 3 characters");
   }
-  if (description.trim().length < 10) {
-    throw new ApiError(411, "title should be at least of 3 letters");
+  if (description?.trim() && description.trim().length < 10) {
+    throw new ApiError(411, "description should be at least 10 characters");
   }
 
   const { videoFile, thumbnailFile } = req.files;
@@ -259,56 +262,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "comments",
-        localField: "_id",
-        foreignField: "video",
-        as: "commentsOnThisVideo",
-        pipeline: [
-          { $sort: { updatedAt: -1 } },
-          { $limit: 10 },
-          {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "commentedBy",
-              pipeline: [
-                { $project: { userName: 1, avatar: "$avatar.url", _id: 0 } },
-              ],
-            },
-          },
-          { $unwind: "$commentedBy" },
-
-          {
-            $lookup: {
-              from: "likes",
-              localField: "_id",
-              foreignField: "commentId",
-              as: "likesOnComment",
-              pipeline: [{ $project: { likeById: 1 } }],
-            },
-          },
-          {
-            $addFields: {
-              likeCount: { $size: "$likesOnComment" },
-              isLikedByUser: { $in: [userId, "$likesOnComment.likeById"] },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              content: 1,
-              commentBy: "$commentedBy.userName",
-              commentByAvatar: "$commentedBy.avatar",
-              likeCount: 1,
-              isLikedByUser: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "videoId",
@@ -324,24 +277,160 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     { $unset: "likesOnVideo" },
   ]);
-  if(!video.length){
-    throw (new ApiError(500, "Unable to Retrieve Video"));
+  if (!video.length) {
+    throw new ApiError(500, "Unable to Retrieve Video");
   }
-  return res.status(200).json(new ApiResponse(200,video[0], "Video Retrieved Successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video[0], "Video Retrieved Successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
+  //TODO: update video details like title, description
+  //get video id from params and validate it
+  //get title and description from body and validate them
+  //update video details
   const { videoId } = req.params;
-  //TODO: update video details like title, description, thumbnail
+  const { title, description } = req.body;
+  const user = req.user?._id;
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(406, "video id is required");
+  }
+  if (!title?.trim() && !description?.trim()) {
+    throw new ApiError(406, "title and description are required");
+  }
+  if (title?.trim() && title.trim().length < 3) {
+    throw new ApiError(411, "title should be at least 3 characters");
+  }
+  if (description?.trim() && description.trim().length < 10) {
+    throw new ApiError(411, "description should be at least 10 characters");
+  }
+  const updatedVideo = await Video.findByIdAndUpdate(
+    { _id: videoId, owner: user },
+    { $set: { title, description } },
+    { new: true, projection: { title: 1, description: 1, updatedAt: 1 } }
+  );
+  if (!updatedVideo) {
+    throw new ApiError(404, "video not found");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
 });
 
-const deleteVideo = asyncHandler(async (req, res) => {
+const updateVideoThumbnail = asyncHandler(async (req, res) => {
+  //TODO : update video thumbnail
+  //get video id from params
+  //validate video id
+  //get thumbnail from body
+  //validate thumbnail
+  //update video thumbnail
+  //send response
   const { videoId } = req.params;
+  const { mimetype, size, path } = req.file;
+
+  const user = req.user?._id;
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(404, "Not A Validate Video Id");
+  }
+  if (!path) {
+    throw new ApiError(406, "thumbnail is required");
+  }
+
+  if (size > MAX_IMAGE_FILE_SIZE || size < MIN_IMAGE_FILE_SIZE) {
+    throw new ApiError(406, "thumbnail size should be between 10KB and 10MB");
+  }
+  if (!allowedImageMimeTypes.includes(mimetype)) {
+    throw new ApiError(406, "thumbnail should be in jpg, jpeg, png format");
+  }
+  const video = await Video.findOne({ _id: videoId });
+  if (!video) {
+    throw new ApiError(404, "video not found");
+  }
+
+  const updateThumbnailUrl = await uploadFileCloudinary(path);
+  if (!updateThumbnailUrl) {
+    throw new ApiError(500, "Unable to upload new thumbnail on cloudinary");
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
+    { _id: videoId, owner: user },
+    {
+      $set: {
+        thumbnail: {
+          url: updateThumbnailUrl.url,
+          publicId: updateThumbnailUrl.publicId,
+        },
+      },
+    },
+    { new: true, projection: { thumbnail: 1, updatedAt: 1 } }
+  );
+  if (!updatedVideo) {
+    throw new ApiError(404, "video not found");
+  }
+  const deleteThumbnailUrl = await deleteFileFromCloudinary(
+    video.thumbnail.publicId
+  );
+  if (!deleteThumbnailUrl) {
+    throw new ApiError(500, "Unable to delete old thumbnail from cloudinary");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
+});
+const deleteVideo = asyncHandler(async (req, res) => {
   //TODO: delete video
+  //get video id from params
+  //validate video id
+  //then check owner of video and video present or not
+  //if present then delete video and thumbnail from cloudinary and database
+  //send response
+  const { videoId } = req.params;
+  const user = req.user?._id;
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(406, "video id is required");
+  }
+  const video = await Video.findOne({ _id: videoId });
+  if (!video) {
+    throw new ApiError(404, "video not found");
+  }
+  // const deleteVideoFromCloudinary = await Promise.allSettled(
+  //   deleteFileFromCloudinary(video.video.publicId),
+  //   deleteFileFromCloudinary(video.thumbnail.publicId)
+  // );
+  
+
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
+  //TODO: toggle publish status of video
+  //get video id from params
+  //validate video id
+  //if already published then unpublish vice versa
+
   const { videoId } = req.params;
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(406, "video id is required");
+  }
+  const user = req.user._id;
+  const toggleVideoStatus = await Video.findByIdAndUpdate(
+    { _id: videoId, owner: user },
+    [{ $set: { isPublished: { $not: "$isPublished" } } }],
+    { new: true }
+  );
+
+  if (!toggleVideoStatus) {
+    throw new ApiError(404, "Video Not Found");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { isPublished: toggleVideoStatus?.isPublished },
+        "Video Published Status Updated"
+      )
+    );
 });
 
 export {
@@ -349,6 +438,7 @@ export {
   publishAVideo,
   getVideoById,
   updateVideo,
+  updateVideoThumbnail,
   deleteVideo,
   togglePublishStatus,
 };
