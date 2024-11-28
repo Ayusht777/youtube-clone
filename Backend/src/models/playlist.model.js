@@ -8,6 +8,7 @@ const playlistSchema = new Schema(
       trim: true,
       min: 3,
       max: 50,
+      unique: true,
     },
     description: {
       type: String,
