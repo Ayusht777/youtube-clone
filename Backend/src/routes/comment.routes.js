@@ -14,7 +14,9 @@ const router = Router();
 
 router.use(VerifyJwt); // Apply verifyJWT middleware to all routes in this file
 
-router.route("/:videoId").get(getVideoComments).post(addComment);
+router.route("/:videoId").get(getVideoComments).post(addComment)
+
+router.route("/:commentId").patch(updateComment).delete(deleteComment);
 
 
 router.route("/commentOnPost/:postId").post(addCommentToPost);
