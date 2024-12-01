@@ -274,14 +274,82 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
-  const { playlistId } = req.params;
   // TODO: delete playlist
+  //get playlist id from params
+  //validate playlist id
+  //check if playlist owner is same as user
+  //delete playlist
+  const { playlistId } = req.params;
+
+  if (!playlistId || !isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid playlist id");
+  }
+
+  const playlist = await Playlist.findOneAndDelete({
+    _id: playlistId,
+    owner: req.user._id,
+  });
+
+  if (!playlist) {
+    throw new ApiError(404, "Playlist not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, true, "Playlist deleted successfully"));
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {
+  //TODO: update playlist
+  //get playlist id from params
+  //validate playlist id
+  //get playlist data from request body
+  //update playlist
+  //return response
   const { playlistId } = req.params;
   const { name, description } = req.body;
-  //TODO: update playlist
+
+  if (!playlistId || !isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid playlist id");
+  }
+
+  if (!name || !name?.trim() === "" || name.length < 3) {
+    throw new ApiError(
+      400,
+      "Name is required and should be at least 3 characters long"
+    );
+  }
+
+  if (description && description.length < 10) {
+    throw new ApiError(
+      400,
+      "Description should be at least 10 characters long"
+    );
+  }
+  const updatePlaylist = await Playlist.findOneAndUpdate(
+    {
+      _id: playlistId,
+      owner: req.user._id,
+    },
+    {
+      $set: {
+        name: name.toLowerCase(),
+        description: description,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!updatePlaylist) {
+    throw new ApiError(404, "Playlist not found");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatePlaylist, "Playlist updated successfully")
+    );
 });
 
 export {
