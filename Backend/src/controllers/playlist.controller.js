@@ -232,7 +232,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   //then check if video is already in playlist or not
   //if not then add video to playlist
   //return response
-  console.log("ssss");
   const { playlistId, videoId } = req.params;
   if (!playlistId || !isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid playlist id");
@@ -269,8 +268,45 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
-  const { playlistId, videoId } = req.params;
   // TODO: remove video from playlist
+  //get playlist id and video id from params
+  //validate playlist id and video id
+  //then check if video is already in playlist or not
+  //if present then remove video from playlist
+  //return response
+  const { playlistId, videoId } = req.params;
+  if (!playlistId || !isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid playlist id");
+  }
+  if (!videoId || !isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video id");
+  }
+
+  const updatePlaylist = await Playlist.findOneAndUpdate(
+    {
+      _id: playlistId,
+      owner: req.user._id,
+      videoIds: videoId,
+    },
+    {
+      $pull: { videoIds: videoId }, //remove video id from videoIds array 
+    },
+    {
+      new: true,
+    }
+  );
+  if (!updatePlaylist) {
+    throw new ApiError(404, "Video already exists in playlist");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatePlaylist,
+        "Video added to playlist successfully"
+      )
+    );
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
