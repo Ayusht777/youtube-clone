@@ -126,6 +126,88 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
   const aggregationPipeline = [
     { $match: { _id: new mongoose.Types.ObjectId(playlistId) } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              userName: 1,
+              avatar: "$avatar.url",
+            },
+          },
+        ],
+        as: "playlistOwner",
+      },
+    },
+    {
+      $unwind: "$playlistOwner",
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videoIds",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              title: 1,
+              "thumbnail.url": 1,
+              views: 1,
+              owner: 1,
+              createdAt: 1,
+            },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    userName: 1,
+                  },
+                },
+              ],
+              as: "videoOwner",
+            },
+          },
+          {
+            $unwind: "$videoOwner",
+          },
+        ],
+        as: "videos",
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        description: 1,
+        playlistThumbnail: { $first: "$videos.thumbnail.url" },
+        playlistOwner: {
+          userName: "$playlistOwner.userName",
+          avatar: "$playlistOwner.avatar",
+        },
+        playlistTotalVideoCount: { $size: "$videoIds" },
+        videos: {
+          $map: {
+            input: "$videos", //video array
+            as: "video", // iterate over videos
+            in: {
+              _id: "$$video._id",
+              title: "$$video.title",
+              thumbnail: "$$video.thumbnail.url",
+              owner: "$$video.owner.userName",
+              views: "$$video.views",
+              createdAt: "$$video.createdAt",
+            },
+          },
+        },
+      },
+    },
   ];
   const aggregatePaginateOptions = {
     page: pageNumber,
@@ -150,6 +232,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   //then check if video is already in playlist or not
   //if not then add video to playlist
   //return response
+  console.log("ssss");
   const { playlistId, videoId } = req.params;
   if (!playlistId || !isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid playlist id");
@@ -157,8 +240,32 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   if (!videoId || !isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
   }
-  
 
+  const updatePlaylist = await Playlist.findOneAndUpdate(
+    {
+      _id: playlistId,
+      owner: req.user._id,
+      videoIds: { $ne: videoId },
+    },
+    {
+      $addToSet: { videoIds: videoId },
+    },
+    {
+      new: true,
+    }
+  );
+  if (!updatePlaylist) {
+    throw new ApiError(404, "Video already exists in playlist");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatePlaylist,
+        "Video added to playlist successfully"
+      )
+    );
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
