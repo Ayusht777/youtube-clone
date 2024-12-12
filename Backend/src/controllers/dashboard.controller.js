@@ -87,7 +87,6 @@ const getChannelVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query } = req.query;
   const pageNumber = Math.max(1, parseInt(page));
   const pageLimit = Math.max(1, Math.min(parseInt(limit), 20)); //max pageLimit is 20
-  console.log(query);
   if (!userId) {
     throw new ApiError(400, "User not found");
   }
@@ -134,6 +133,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        ...(query && { score: { $meta: "textScore" } }),
         thumbnail: "$thumbnail.url",
         title: 1,
         description: 1,
@@ -149,7 +149,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
       },
     },
   ];
-
+  
   const aggregatePaginateOptions = {
     page: pageNumber,
     limit: pageLimit,
@@ -172,3 +172,4 @@ const getChannelVideos = asyncHandler(async (req, res) => {
 });
 
 export { getChannelStats, getChannelVideos };
+
