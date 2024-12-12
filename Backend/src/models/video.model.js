@@ -56,5 +56,7 @@ const videoSchema = new Schema(
   },
   { timestamps: true }
 );
+videoSchema.index({ title: "text" ,description:"text"});
+
 videoSchema.plugin(mongooseAggregatePaginate);
 export const Video = model("Video", videoSchema);
