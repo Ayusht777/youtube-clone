@@ -1,9 +1,9 @@
-import mongoose, { isValidObjectId } from "mongoose";
-import { User } from "../models/user.model.js";
-import { Subscription } from "../models/subscription.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import mongoose, { isValidObjectId } from 'mongoose';
+import { Subscription } from '../models/subscription.model.js';
+import { User } from '../models/user.model.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   // TODO: toggle subscription
@@ -18,11 +18,11 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
   const user = req.user._id; // it is as susbsriberid
   if (!channelId || !isValidObjectId(channelId)) {
-    throw new ApiError(406, "channel id is required");
+    throw new ApiError(406, 'channel id is required');
   }
   const channel = await User.findById({ _id: channelId });
   if (!channel) {
-    throw new ApiError(404, "channel not found");
+    throw new ApiError(404, 'channel not found');
   }
   const isSubsribed = await Subscription.findOneAndDelete({
     subscriberId: user,
@@ -34,7 +34,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       channelId: channelId,
     });
     if (!createSubscription) {
-      throw new ApiError(404, "subscription not created");
+      throw new ApiError(404, 'subscription not created');
     }
     return res
       .status(200)
@@ -42,7 +42,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           { Subscription: createSubscription._id, state: true },
-          "subscription created"
+          'subscription created'
         )
       );
   }
@@ -52,7 +52,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { Subscription: null, state: false },
-        "subscription removed"
+        'subscription removed'
       )
     );
 });
@@ -64,7 +64,7 @@ const getChannelSubscribers = asyncHandler(async (req, res) => {
   // return total count of subsrciber number in response
   const { channelId } = req.params;
   if (!channelId || !isValidObjectId(channelId)) {
-    throw new ApiError(406, "channel id is required");
+    throw new ApiError(406, 'channel id is required');
   }
   const channelSubscriber = await Subscription.aggregate([
     { $match: { channelId: new mongoose.Types.ObjectId(channelId) } },
@@ -76,38 +76,59 @@ const getChannelSubscribers = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           channelSubscriber.length,
-          "subscribers fetched successfully"
+          'subscribers fetched successfully'
         )
       );
   }
-  res.status(200).json(new ApiResponse(200, 0, "channel has no subscribers"));
+  res.status(200).json(new ApiResponse(200, 0, 'channel has no subscribers'));
 });
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
   //TODO: get channel list to which user has subscribed
   //get user id from req.user or subscriberId from params === user id
-  const { subscriberId } = req.params;
-  if (!subscriberId || !isValidObjectId(subscriberId)) {
-    throw new ApiError(406, "subscriber id is required");
-  }
+  const user = req.user?._id;
+
   const subscribedChannels = await Subscription.aggregate([
-    { $match: { subscriberId: new mongoose.Types.ObjectId(subscriberId) } },
     {
-      $lookup: {
-        from: "users",
-        localField: "channelId",
-        foreignField: "_id",
-        as: "channelDetails",
+      $match: {
+        subscriberId: new mongoose.Types.ObjectId(user),
       },
     },
-    { $unwind: "$channelDetails" },
     {
-      $project: {
-        channelId: "$channelDetails._id",
-        channelName: "$channelDetails.name",
-        channelImage: "$channelDetails.avatar.url",
+      $lookup: {
+        from: 'videos',
+        localField: 'channelId',
+        foreignField: 'owner',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'owner',
+              foreignField: '_id',
+              as: 'channelOwner',
+            },
+          },
+          { $unwind: '$channelOwner' },
+          {
+            $project: {
+              title: 1,
+              description: 1,
+              thumbnail: '$thumbnail.url',
+              views: 1,
+              createdAt: 1,
+              channelName: '$channelOwner.userName',
+              channelAvatar: '$channelOwner.avatar.url',
+            },
+          },
+        ],
+        as: 'videos',
       },
+    },
+    { $unwind: '$videos' },
+    { $sort: { createdAt: 1 } },
+    {
+      $replaceRoot: { newRoot: '$videos' },
     },
   ]);
 
@@ -117,9 +138,9 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         subscribedChannels,
-        "subscribed channels fetched successfully"
+        'subscribed channels fetched successfully'
       )
     );
 });
 
-export { toggleSubscription, getChannelSubscribers, getSubscribedChannels };
+export { getChannelSubscribers, getSubscribedChannels, toggleSubscription };
