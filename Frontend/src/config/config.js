@@ -6,7 +6,7 @@
 export const getApiConfig = () =>
   Object.freeze(
     {
-      development: { API_URL: import.meta.env.API_URL },
+      development: { API_URL: import.meta.env.VITE_API_URL },
       production: {
         API_URL: import.meta.env.VITE_PROD_API_URL,
       },

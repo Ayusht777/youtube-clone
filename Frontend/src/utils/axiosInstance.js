@@ -1,8 +1,7 @@
 import axios from "axios";
-import { getApiConfig } from "@/config/config";
+import { getApiConfig } from "../config/config";
 
 const config = getApiConfig();
-
 // Creates and exports a configured axios instance with:
 // - Dynamic base URL from environment config
 // - Cross-origin credentials enabled
