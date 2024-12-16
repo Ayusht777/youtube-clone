@@ -20,7 +20,7 @@ export default {
           DEFAULT: '#FFFFFF',  // White buttons (e.g., "Log in")
           text: '#000000',     // Black text for buttons
           border: '#333333',   // Subtle border around button
-          hover: '#F5F5F5',    // Lighter white on hover
+          hover: '#1E1E1E',    // Lighter white on hover
         },
         input: {
           background: '#1E1E1E', // Input field background
