@@ -1,6 +1,8 @@
 import toast from "react-hot-toast";
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-export const useRegistrationFormValidation = (formData, avatarFile) => {
+const passwordRegex =
+  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+export const registrationFormValidation = (formData, avatarFile) => {
   const validateForm = () => {
     switch (true) {
       case !avatarFile:
@@ -21,6 +23,11 @@ export const useRegistrationFormValidation = (formData, avatarFile) => {
       case formData.password.length < 8:
         toast.error("Password must be at least 8 characters long");
         return false;
+      case !passwordRegex.test(formData.password):
+        toast.error(
+          "Password must contain at least one uppercase letter, one number, and one special character"
+        );
+        return false;
 
       case !formData.username.trim():
         toast.error("Username is required");
@@ -30,11 +37,11 @@ export const useRegistrationFormValidation = (formData, avatarFile) => {
         toast.error("Username must be at least 3 characters long");
         return false;
 
-      case !formData.fullName.trim():
+      case !formData.fullname.trim():
         toast.error("Full name is required");
         return false;
 
-      case formData.fullName.length < 2:
+      case formData.fullname.length < 2:
         toast.error("Please enter a valid full name");
         return false;
 

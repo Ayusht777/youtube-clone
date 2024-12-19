@@ -12,6 +12,16 @@ export const apiClient = axios.create({
   withCredentials: true,
   timeout: 8000,
   headers: {
-    "Content-type": "application/json",
+    "Content-Type": "application/json",
+  },
+});
+
+// Multipart instance or from file upload
+export const uploadClient = axios.create({
+  baseURL: config.API_URL,
+  withCredentials: true,
+  timeout: 8000,
+  headers: {
+    "Content-Type": "multipart/form-data",
   },
 });

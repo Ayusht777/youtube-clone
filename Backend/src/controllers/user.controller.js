@@ -68,7 +68,8 @@ const registerUser = asyncHandler(async (req, res) => {
   // check user creation
   // return  response
   const { email, password, userName, fullName } = req.body;
-  // console.log(req.body);
+  console.log(req.body);
+  console.log(req.files)
   if (
     [email, password, userName, fullName].some(
       (inputFields) => inputFields?.trim() === "" //trim used to remove space
@@ -76,11 +77,11 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
-  if (userName.length < 3) {
+  if (userName?.length < 3) {
     throw new ApiError(422, "Username must be at least 3 characters");
   }
 
-  if (fullName.length < 3) {
+  if (fullName?.length < 3) {
     throw new ApiError(422, "Full name must be at least 3 characters");
   }
 
@@ -173,7 +174,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    userName: userName.toLowerCase(),
+    userName: userName?.toLowerCase(),
     email,
     fullName,
     avatar: {
@@ -186,7 +187,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const newUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -watchHistory -__v"
   ); //remove password & refresh token
 
   if (!newUser) {

@@ -21,7 +21,17 @@ const App = () => {
   return (
     <>
       <RouterProvider router={router} />
-      <Toaster />
+      <Toaster
+        toastOptions={{
+          error: {
+            style: {
+              backgroundColor: "#1E1E1E",
+              color: "#888888",
+              border: "1px solid #333333",
+            },
+          },
+        }}
+      />
     </>
   );
 };
