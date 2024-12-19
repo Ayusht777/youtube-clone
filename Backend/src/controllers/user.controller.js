@@ -69,7 +69,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // return  response
   const { email, password, userName, fullName } = req.body;
   console.log(req.body);
-  console.log(req.files)
+  console.log(req.files);
   if (
     [email, password, userName, fullName].some(
       (inputFields) => inputFields?.trim() === "" //trim used to remove space
@@ -218,13 +218,13 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(422, "Password is required");
   }
 
-  if (userName.length < 3) {
+  if (userName?.length < 3) {
     throw new ApiError(411, "username should be at least of 3 letters");
   }
   if (!RegExp(emailRegex).test(email)) {
     throw new ApiError(406, "enter a valid email");
   }
-  if (password.length < 6) {
+  if (password?.length < 6) {
     throw new ApiError(411, "password should be at least of 6 letters");
   } else if (!RegExp(passwordRegex).test(password)) {
     throw new ApiError(
@@ -237,7 +237,6 @@ const loginUser = asyncHandler(async (req, res) => {
     $or: [{ userName }, { email }],
   });
   if (!user) throw new ApiError(401, "User does not exist !!");
-  console.log("user->", user);
 
   const isPasswordValid = await user.isPasswordCorrect(password);
 
@@ -247,20 +246,25 @@ const loginUser = asyncHandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -watchHistory -__v"
   );
+
+const responseData = {
+  accessToken,
+  refreshToken,
+  _id: loggedInUser._id,
+  username: loggedInUser.userName,
+  fullname: loggedInUser.fullName,
+  email: loggedInUser.email,
+  avatar: loggedInUser.avatar,
+  coverImage: loggedInUser.coverImage,
+};
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, optionsForAccessTokenCookie)
     .cookie("refreshToken", refreshToken, optionsForRefreshTokenCookie)
-    .json(
-      new ApiResponse(
-        200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "User Logged In Successfully"
-      )
-    );
+    .json(new ApiResponse(200, responseData, "User Logged In Successfully"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -563,9 +567,9 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
         watchHistory: 1,
       },
     },
-    {$unwind: "$watchHistory"},
+    { $unwind: "$watchHistory" },
     {
-      $sort:{"watchHistory.lastWatchedAt": -1}
+      $sort: { "watchHistory.lastWatchedAt": -1 },
     },
     {
       $lookup: {
@@ -599,19 +603,15 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
     {
       $project: {
         VideoId: "$watchHistory.videoId",
-        thumbnail: {$first :"$video.thumbnail.url"},
-        title: {$first:"$video.title"},
-        description: {$first:"$video.description"},
-        channelOwner: {$first:"$video.channelOwner.userName"},
-        channelOwnerId: {$first:"$video.channelOwner._id"},
-        views: {$first:"$video.views"},
+        thumbnail: { $first: "$video.thumbnail.url" },
+        title: { $first: "$video.title" },
+        description: { $first: "$video.description" },
+        channelOwner: { $first: "$video.channelOwner.userName" },
+        channelOwnerId: { $first: "$video.channelOwner._id" },
+        views: { $first: "$video.views" },
         lastWatchedAt: "$watchHistory.lastWatchedAt",
-
-
-
       },
-    }
-    
+    },
   ]);
   if (!watchHistory?.length) {
     throw new ApiError(404, "watchHistory does not existed");
