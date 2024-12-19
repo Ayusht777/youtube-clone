@@ -5,7 +5,7 @@ import { uploadClient } from "../../utils/axiosInstance";
 import Button from "../shared/Button";
 import Input from "../shared/Input";
 import AvatarUploader from "../shared/avatar/avatarUploader";
-
+import { useNavigate } from "react-router";
 const initialRegistrationData = {
   email: "",
   password: "",
@@ -17,6 +17,7 @@ const Register = () => {
   const [registrationData, setRegistrationData] = useState(
     initialRegistrationData
   );
+  const navigate = useNavigate();
 
   const { validateForm } = registrationFormValidation(
     registrationData,
@@ -41,12 +42,13 @@ const Register = () => {
       const response = await uploadClient.post("/users/register", formData);
       console.log(response);
       toast.success("Registration successful!");
+      navigate("/auth/login");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Registration failed");
     }
   };
 
-  const handleInputChange = ({target: { name, value }}) => {
+  const handleInputChange = ({ target: { name, value } }) => {
     setRegistrationData((prevData) => ({
       ...prevData,
       [name]: value,

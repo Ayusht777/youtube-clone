@@ -14,7 +14,6 @@ const initialLoginData = {
 const Login = () => {
   const [loginData, setLoginData] = useState(initialLoginData);
   const dispatch = useDispatch();
-
   const { validateForm } = loginFormValidation(loginData);
 
   const handleLoginSubmit = async (event) => {
@@ -30,6 +29,7 @@ const Login = () => {
       tokenStorage.setTokens(userData.accessToken, userData.refreshToken);
       dispatch(loginUser(userData));
       toast.success("Login successful!");
+      setLoginData(initialLoginData);
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
     }

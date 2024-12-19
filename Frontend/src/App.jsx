@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import Registered from "./components/auth/registered";
 import Login from "./components/auth/login";
 import AuthLayout from "./components/auth/authLayout";
+import NotFound from "./pages/notFoundPage"
 import { Toaster } from "react-hot-toast";
 const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path:"*",
+    element: <NotFound/>,
+  }
 ]);
 const App = () => {
   return (
