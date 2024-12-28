@@ -1,7 +1,14 @@
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "../store/auth/auth.slice";
-export const store = configureStore({
-  reducer: { auth: authReducer },
-});
-
-export { store as default };
+import {create} from "zustand";
+import { persist } from "zustand/middleware";
+const useAuthStore = create(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      loginUser: (userData) => set({ user: userData, isAuthenticated: true }),
+      logoutUser: () => set({ user: null, isAuthenticated: false }),
+    }),
+    { name: "auth" }
+  )
+);
+export default useAuthStore;

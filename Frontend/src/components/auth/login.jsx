@@ -4,18 +4,16 @@ import { loginFormValidation } from "../../helper/validator/formValidation";
 import Button from "../shared/Button";
 import Input from "../shared/Input";
 import { apiClient } from "../../utils/axiosInstance";
-import { useDispatch } from "react-redux";
-import { loginUser } from "../../store/auth/auth.slice";
 import { tokenStorage } from "../../utils/tokenStorage";
+import useAuthStore from "../../store/store";
 const initialLoginData = {
   email: "",
   password: "",
 };
 const Login = () => {
   const [loginData, setLoginData] = useState(initialLoginData);
-  const dispatch = useDispatch();
   const { validateForm } = loginFormValidation(loginData);
-
+  const loginUser = useAuthStore(state=>state.loginUser)
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
 
@@ -27,7 +25,8 @@ const Login = () => {
       const response = await apiClient.post("/users/login", loginData);
       const userData = response?.data?.data;
       tokenStorage.setTokens(userData.accessToken, userData.refreshToken);
-      dispatch(loginUser(userData));
+      console.log("loginData", userData);
+      loginUser(userData)
       toast.success("Login successful!");
       setLoginData(initialLoginData);
     } catch (error) {
