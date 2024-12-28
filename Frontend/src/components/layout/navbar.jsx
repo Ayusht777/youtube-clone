@@ -1,7 +1,7 @@
 import Avatar from "@/components/shared/avatar/avatar";
 import Button from "@/components/shared/button";
 import Search from "@/components/shared/search";
-import useAuthStore from "@/store/store";
+import useAuthStore from "@/store/useAuthStore";
 import { CircleUser, Menu, Plus, Youtube } from "lucide-react";
 import { useNavigate } from "react-router";
 

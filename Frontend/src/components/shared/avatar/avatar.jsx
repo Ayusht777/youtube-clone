@@ -1,4 +1,4 @@
-import useAuthStore from "../../../store/store";
+import useAuthStore from "../../../store/useAuthStore";
 
 const Avatar = () => {
   const avatar = useAuthStore((state) => state.user?.avatar?.url);
