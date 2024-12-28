@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { registrationFormValidation } from "../../helper/validator/formValidation";
-import { uploadClient } from "../../utils/axiosInstance";
-import Button from "../shared/Button";
-import Input from "../shared/Input";
-import AvatarUploader from "../shared/avatar/avatarUploader";
 import { useNavigate } from "react-router";
+import { registrationFormValidation } from "@/helper/validator/formValidation";
+import { uploadClient } from "@/utils/axiosInstance";
+import AvatarUploader from "@/components/shared/avatar/avatarUploader";
+import Button from "@/components/shared/button";
+import Input from "@/components/shared/input";
 const initialRegistrationData = {
   email: "",
   password: "",

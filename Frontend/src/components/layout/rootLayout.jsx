@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import Navbar from "./navbar";
+import Navbar from "@/components/layout/navbar";
 const RootLayout = () => {
   return (
     <div className="bg-background">

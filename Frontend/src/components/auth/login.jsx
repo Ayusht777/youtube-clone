@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { loginFormValidation } from "../../helper/validator/formValidation";
-import Button from "../shared/Button";
-import Input from "../shared/Input";
-import { apiClient } from "../../utils/axiosInstance";
-import { tokenStorage } from "../../utils/tokenStorage";
-import useAuthStore from "../../store/store";
+import { loginFormValidation } from "@/helper/validator/formValidation";
+import useAuthStore from "@/store/store";
+import { apiClient } from "@/utils/axiosInstance";
+import { tokenStorage } from "@/utils/tokenStorage";
+import Button from "@/components/shared/button";
+import Input from "@/components/shared/input";
 const initialLoginData = {
   email: "",
   password: "",
@@ -13,7 +13,7 @@ const initialLoginData = {
 const Login = () => {
   const [loginData, setLoginData] = useState(initialLoginData);
   const { validateForm } = loginFormValidation(loginData);
-  const loginUser = useAuthStore(state=>state.loginUser)
+  const loginUser = useAuthStore((state) => state.loginUser);
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
 
@@ -26,7 +26,7 @@ const Login = () => {
       const userData = response?.data?.data;
       tokenStorage.setTokens(userData.accessToken, userData.refreshToken);
       console.log("loginData", userData);
-      loginUser(userData)
+      loginUser(userData);
       toast.success("Login successful!");
       setLoginData(initialLoginData);
     } catch (error) {

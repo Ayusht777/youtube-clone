@@ -1,11 +1,11 @@
 import { Toaster } from "react-hot-toast";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import AuthLayout from "./components/auth/authLayout";
-import Login from "./components/auth/login";
-import Registered from "./components/auth/registered";
-import RootLayout from "./components/layout/rootLayout";
-import HomePage from "./pages/homePage";
-import NotFound from "./pages/notFoundPage";
+import AuthLayout from "@/components/auth/authLayout";
+import Login from "@/components/auth/login";
+import Registered from "@/components/auth/registered";
+import RootLayout from "@/components/layout/rootLayout";
+import HomePage from "@/pages/homePage";
+import NotFound from "@/pages/notFoundPage";
 
 const router = createBrowserRouter([
   {

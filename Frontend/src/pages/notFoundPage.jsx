@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router';
-import Button from '../components/shared/Button';
-import {ArrowLeft} from "lucide-react"
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router";
+import Button from "../components/shared/button";
 const NotFound = () => {
   const navigate = useNavigate();
 
@@ -11,11 +11,7 @@ const NotFound = () => {
       <p className="text-text-secondary text-center mb-8 max-w-md">
         The page you're looking for doesn't exist or has been moved.
       </p>
-      <Button 
-        onClick={() => navigate(-1)}
-        type="button"
-        icon={ArrowLeft}
-      >
+      <Button onClick={() => navigate(-1)} type="button" icon={ArrowLeft}>
         Go Back
       </Button>
     </div>
