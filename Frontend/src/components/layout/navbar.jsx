@@ -4,14 +4,22 @@ import Search from "@/components/shared/search";
 import useAuthStore from "@/store/useAuthStore";
 import { CircleUser, Menu, Plus, Youtube } from "lucide-react";
 import { useNavigate } from "react-router";
+import useLayoutStore from "@/store/useLayoutStore";
 
-const MenuButton = () => (
-  <div className="size-10 flex items-center">
-    <button className="rounded-full text-text-primary size-6">
-      <Menu strokeWidth={1.25} />
-    </button>
-  </div>
-);
+const MenuButton = () => {
+  const toggleSidebar = useLayoutStore((state) => state.toggleSidebar);
+
+  return (
+    <div className="size-10 flex items-center">
+      <button
+        className="rounded-full text-text-primary size-6"
+        onClick={toggleSidebar}
+      >
+        <Menu strokeWidth={1.25} />
+      </button>
+    </div>
+  );
+};
 
 const BrandLogo = () => (
   <div className="flex items-center justify-center gap-2 text-text-primary font-medium tracking-tighter">
