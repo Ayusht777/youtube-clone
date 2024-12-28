@@ -2,7 +2,7 @@ import { Search as SearchIcon } from "lucide-react";
 
 const Search = () => {
   return (
-    <div className="w-full min-w-[580px]">
+    <div className="w-full">
       <div className="flex items-center gap-2 rounded-full bg-background-light border border-input-border transition-all  focus-within:border-blue-500 focus-within:shadow-md">
         <input
           type="text"
