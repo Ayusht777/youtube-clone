@@ -1,10 +1,18 @@
-import { AppSidebar } from "@/components/AppSidebar";
+import { RootLayout } from "@/layouts/RootLayout";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+const Home = () => {
+  return <div>hello</div>;
+};
 function App() {
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar />
-      <main className="flex-1 p-6"></main>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<RootLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
