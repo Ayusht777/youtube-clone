@@ -1,19 +1,17 @@
-import { AppSidebar } from "@/components/AppSidebar";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Outlet } from "react-router";
 
 export function RootLayout() {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen flex-col">
+      <div className="relative flex min-h-screen flex-col">
         <SiteHeader />
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1">
           <AppSidebar />
-          <main className="flex-1 overflow-auto">
-            <div className="container py-6 px-4 md:px-6 lg:px-8">
-              <Outlet />
-            </div>
+          <main className="flex-1">
+            <Outlet />
           </main>
         </div>
       </div>

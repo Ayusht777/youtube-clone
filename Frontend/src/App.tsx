@@ -1,5 +1,4 @@
 import { RootLayout } from "@/layouts/RootLayout";
-import { Dashboard } from "@/pages/Dashboard";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 function App() {
@@ -7,7 +6,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<RootLayout />}>
-          <Route path="/" element={<Dashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
