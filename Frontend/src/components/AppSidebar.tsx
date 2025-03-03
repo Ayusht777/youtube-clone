@@ -11,13 +11,13 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { HomeIcon, Settings, User } from "lucide-react";
+import { BookOpen, Home, Settings2, Users } from "lucide-react";
 
 const platformItems = [
-  { icon: HomeIcon, label: "Playground", active: true },
-  { icon: User, label: "Models" },
-  { icon: Settings, label: "Documentation" },
-  { icon: Settings, label: "Settings" },
+  { icon: Home, label: "Playground", active: true },
+  { icon: Users, label: "Models" },
+  { icon: BookOpen, label: "Documentation" },
+  { icon: Settings2, label: "Settings" },
 ];
 
 const projectItems = [
