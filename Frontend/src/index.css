@@ -115,9 +115,15 @@
 }
 
 @layer base {
+  :root {
+    --sidebar-width: 16rem;
+    --sidebar-width-collapsed: 3rem;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
+  
   body {
     @apply bg-background text-foreground;
   }
