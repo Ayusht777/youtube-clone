@@ -1,13 +1,8 @@
 import axiosInstance from "../lib/axios";
-import {
-  ApiResponse,
-  LoginFormData,
-  RegisterFormData,
-  UserData,
-} from "../types/index";
+import { ApiResponse, LoginFormData, UserData } from "../types/index";
 
 export const UserApi = {
-  register: async (data: RegisterFormData) => {
+  register: async (data: FormData) => {
     const response = await axiosInstance.post("/users/register", data, {
       headers: {
         "Content-Type": "multipart/form-data",
