@@ -1,14 +1,14 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export function LoginForm({
   className,
@@ -51,9 +51,6 @@ export function LoginForm({
                 <Button type="submit" className="w-full">
                   Login
                 </Button>
-                <Button variant="outline" className="w-full">
-                  Login with Google
-                </Button>
               </div>
             </div>
             <div className="mt-4 text-center text-sm">
@@ -66,5 +63,5 @@ export function LoginForm({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
