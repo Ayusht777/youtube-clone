@@ -6,9 +6,9 @@ import {
   UserData,
 } from "../types/index";
 
-const UserApi = {
+export const UserApi = {
   register: async (data: RegisterFormData) => {
-    const response = await axiosInstance.post("/user/register", data, {
+    const response = await axiosInstance.post("/users/register", data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -16,9 +16,7 @@ const UserApi = {
     return response.data;
   },
   login: async (data: LoginFormData): Promise<ApiResponse<UserData>> => {
-    const response = await axiosInstance.post("/user/login", data);
+    const response = await axiosInstance.post("/users/login", data);
     return response.data;
   },
 };
-
-export default UserApi;

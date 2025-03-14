@@ -247,7 +247,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const responseData = {
     accessToken,
     refreshToken,
-    _id: loggedInUser._id,
+    id: loggedInUser._id,
     username: loggedInUser.userName,
     fullname: loggedInUser.fullName,
     email: loggedInUser.email,

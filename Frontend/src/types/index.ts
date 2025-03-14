@@ -4,6 +4,14 @@ export interface ApiResponse<T> {
   message: string;
   success: boolean;
 }
+export interface ApiError {
+  statusCode: number;
+  message: string;
+  success: boolean;
+  errors: unknown[]; // Array of detailed error information
+  data: null; // In ApiError.js, data is always null
+}
+
 export interface Avatar {
   url: string;
   publicId: string;
