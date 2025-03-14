@@ -1,135 +1,81 @@
 import {
-    BookOpen,
-    Bot,
-    Frame,
-    LifeBuoy,
-    Map,
-    PieChart,
-    Send,
-    Settings2,
-    SquareTerminal
-} from "lucide-react"
+  BarChart,
+  Bell,
+  Heart,
+  History,
+  Home,
+  ListVideo,
+  Settings,
+  User,
+  Video,
+} from "lucide-react";
 
 export const sidebarData = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "User Name",
+    email: "user@example.com",
+    avatar: "/avatars/user.jpg",
   },
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Home",
+      url: "/",
+      icon: Home,
       isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
+      title: "Subscriptions",
+      url: "/subscriptions",
+      icon: Bell,
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+      title: "Videos",
+      url: "/videos",
+      icon: Video,
     },
     {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
+      title: "Playlists",
+      url: "/playlists",
+      icon: ListVideo,
+    },
+    {
+      title: "Community",
+      url: "/community",
+      icon: User,
+    },
+
+    {
+      title: "History",
+      url: "/history",
+      icon: History,
+    },
+    {
+      title: "Liked Videos",
+      url: "/liked-videos",
+      icon: Heart,
+    },
+
+    {
+      title: "Channel Analytics",
+      url: "/channel-stats",
+      icon: BarChart,
+    },
+    {
+      title: "Community",
+      url: "/community",
+      icon: User,
     },
   ],
   navSecondary: [
     {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
+      title: "Notifications",
+      url: "/notifications",
+      icon: Bell,
     },
     {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
     },
   ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-} 
+};
