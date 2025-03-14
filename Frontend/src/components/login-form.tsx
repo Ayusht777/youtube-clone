@@ -37,6 +37,7 @@ export function LoginForm({
       navigate("/");
     },
     onError: (error: ApiError) => {
+      console.log(error)
       toast.error(error.message);
     },
   });

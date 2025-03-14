@@ -47,7 +47,8 @@ export function SignupForm({
       navigate("/login");
     },
     onError: (error: ApiError) => {
-      toast.error(error.message || "Registration failed.");
+      console.log(error)
+      toast.error(error.message);
     },
   });
 
