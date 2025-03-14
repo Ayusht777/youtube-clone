@@ -47,14 +47,14 @@ export function SignupForm({
       navigate("/login");
     },
     onError: (error: ApiError) => {
-      console.log(error)
-      toast.error(error.message);
+      console.error(error);
+      toast.error(error.message || "Registration failed. Please try again.");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    registerMutation.mutate(); // Trigger the mutation
+    registerMutation.mutate();
   };
 
   return (
@@ -159,8 +159,14 @@ export function SignupForm({
                 )}
               </div>
             </div>
-            <Button type="submit" className="w-full py-2 text-lg">
-              Create account
+            <Button
+              type="submit"
+              className="w-full py-2 text-lg"
+              disabled={registerMutation.isPending}
+            >
+              {registerMutation.isPending
+                ? "Creating account..."
+                : "Create account"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

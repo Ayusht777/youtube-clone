@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authStorage } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { ApiError, ApiResponse, UserData } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
@@ -25,20 +25,20 @@ export function LoginForm({
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-
+  const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
   const loginMutation = useMutation({
     mutationFn: (data: { email: string; password: string }) =>
       UserApi.login(data),
     onSuccess: (response: ApiResponse<UserData>) => {
-      authStorage.setAuth(response.data);
-      toast.success(response.message);
-      navigate("/");
+      login(response.data);
+      toast.success(response.message || "Login successful!");
+      navigate("/dashboard");
     },
     onError: (error: ApiError) => {
-      console.log(error)
-      toast.error(error.message);
+      console.error(error);
+      toast.error(error.message || "Login failed. Please try again.");
     },
   });
 
