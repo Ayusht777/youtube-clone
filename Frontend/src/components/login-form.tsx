@@ -34,7 +34,7 @@ export function LoginForm({
     onSuccess: (response: ApiResponse<UserData>) => {
       login(response.data);
       toast.success(response.message || "Login successful!");
-      navigate("/dashboard");
+      navigate("/");
     },
     onError: (error: ApiError) => {
       console.error(error);
