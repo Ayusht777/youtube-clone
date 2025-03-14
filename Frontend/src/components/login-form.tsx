@@ -13,6 +13,7 @@ import { authStorage } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { ApiError, ApiResponse, UserData } from "@/types";
 import { useMutation } from "@tanstack/react-query";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -23,6 +24,8 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   const navigate = useNavigate();
 
   const loginMutation = useMutation({
@@ -47,43 +50,44 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle className="text-lg font-bold">Welcome Back!</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Please enter your email and password to log in to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-3">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
                   >
-                    Forgot your password?
-                  </a>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
               </div>
               <div className="flex flex-col gap-3">
                 <Button
@@ -91,12 +95,12 @@ export function LoginForm({
                   className="w-full"
                   disabled={loginMutation.isPending}
                 >
-                  {loginMutation.isPending ? "Logging in..." : "Login"}
+                  {loginMutation.isPending ? "Logging in..." : "Log In"}
                 </Button>
               </div>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link to="/signup" className="underline underline-offset-4">
                 Sign up
               </Link>
