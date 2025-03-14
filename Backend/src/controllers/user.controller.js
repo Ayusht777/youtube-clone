@@ -1,14 +1,13 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { User } from "../models/user.model.js";
-import {
-  uploadFileCloudinary,
-  deleteFileFromCloudinary,
-} from "../service/cloudinary.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import { Video } from "../models/video.model.js";
+import { User } from "../models/user.model.js";
+import {
+  deleteFileFromCloudinary,
+  uploadFileCloudinary,
+} from "../service/cloudinary.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const passwordRegex =
   /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
@@ -208,19 +207,15 @@ const loginUser = asyncHandler(async (req, res) => {
   // if (req.cookies.accessToken || req.cookies.refreshToken) {
   //   throw new ApiError(400, "User is already logged in.");
   // }
-  const { userName, email, password } = req.body;
-  // console.log(userName, email, password);
+  const { email, password } = req.body;
 
-  if (!userName && !email) {
-    throw new ApiError(422, "username & email is required");
+  if (!email) {
+    throw new ApiError(422, "email is required");
   }
   if (!password) {
     throw new ApiError(422, "Password is required");
   }
 
-  if (userName?.length < 3) {
-    throw new ApiError(411, "username should be at least of 3 letters");
-  }
   if (!RegExp(emailRegex).test(email)) {
     throw new ApiError(406, "enter a valid email");
   }
@@ -234,7 +229,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({
-    $or: [{ userName }, { email }],
+    email,
   });
   if (!user) throw new ApiError(401, "User does not exist !!");
 
@@ -249,16 +244,16 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken -watchHistory -__v"
   );
 
-const responseData = {
-  accessToken,
-  refreshToken,
-  _id: loggedInUser._id,
-  username: loggedInUser.userName,
-  fullname: loggedInUser.fullName,
-  email: loggedInUser.email,
-  avatar: loggedInUser.avatar,
-  coverImage: loggedInUser.coverImage,
-};
+  const responseData = {
+    accessToken,
+    refreshToken,
+    _id: loggedInUser._id,
+    username: loggedInUser.userName,
+    fullname: loggedInUser.fullName,
+    email: loggedInUser.email,
+    avatar: loggedInUser.avatar,
+    coverImage: loggedInUser.coverImage,
+  };
 
   return res
     .status(200)
@@ -623,14 +618,14 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 export {
-  registerUser,
+  changeCurrentPassword,
+  getCurrentUser,
+  getUserChannelProfile,
+  getUserWatchHistory,
   loginUser,
   logoutUser,
   refreshAccessToken,
-  changeCurrentPassword,
-  getCurrentUser,
+  registerUser,
   updateAccountDetails,
   updateUserAvatar,
-  getUserChannelProfile,
-  getUserWatchHistory,
 };
