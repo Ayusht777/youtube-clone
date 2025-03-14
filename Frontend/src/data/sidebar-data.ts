@@ -11,11 +11,6 @@ import {
 } from "lucide-react";
 
 export const sidebarData = {
-  user: {
-    name: "User Name",
-    email: "user@example.com",
-    avatar: "/avatars/user.jpg",
-  },
   navMain: [
     {
       title: "Home",
