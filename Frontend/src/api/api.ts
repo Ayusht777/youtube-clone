@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/store/authStore";
 import axiosInstance from "../lib/axios";
 import { ApiError, ApiResponse, LoginFormData, UserData } from "../types/index";
 
@@ -18,6 +19,24 @@ export const UserApi = {
     try {
       const response = await axiosInstance.post("/users/login", data);
       return response.data;
+    } catch (error) {
+      throw error as ApiError;
+    }
+  },
+  logout: async (): Promise<void> => {
+    const { accessToken } = useAuthStore.getState();
+    console.log(accessToken);
+    try {
+      await axiosInstance.post(
+        "/users/logout",
+        {},
+        {
+          // Pass an empty object as the body
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // Correctly format the Authorization header
+          },
+        }
+      );
     } catch (error) {
       throw error as ApiError;
     }

@@ -1,7 +1,7 @@
+import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import jwt from "jsonwebtoken";
 
 export const VerifyJwt = asyncHandler(async (req, res, next) => {
   try {
@@ -9,7 +9,7 @@ export const VerifyJwt = asyncHandler(async (req, res, next) => {
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", ""); //get access token
 
-    // console.log(token);
+   
     if (!token || typeof token !== "string") {
       throw new ApiError(401, "authorization token is missing or invalid");
     }

@@ -1,6 +1,3 @@
-import { Film } from "lucide-react";
-import * as React from "react";
-
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -14,6 +11,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { sidebarData } from "@/data/sidebar-data";
+import { Film } from "lucide-react";
+
+import * as React from "react";
+import { Link } from "react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -26,13 +27,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <div>
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Film className="size-4" />
-                </div>
+                <Link to="/">
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Film className="size-4" />
+                  </div>
+                </Link>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <h2 className="truncate font-medium">Youtube Clone</h2>
                   <p className="truncate text-xs">
-                    by{" "}
+                    by
                     <a
                       href="https://www.linkedin.com/in/ayush-talesara-898655242/"
                       target="_blank"
