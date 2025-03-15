@@ -25,14 +25,14 @@ export interface Avatar {
 
 export interface UserData {
   _id: string;
-  username: string;
-  fullname: string;
+  userName: string;
+  fullName: string;
   email: string;
   avatar: Avatar;
   coverImage?: string;
   watchHistory?: string[];
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
