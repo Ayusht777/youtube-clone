@@ -10,7 +10,7 @@ const UpdateUserProfile = () => {
   const { user } = useAuthStore();
   const [fullName, setFullName] = useState(user?.fullName || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [password, setPassword] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -24,9 +24,9 @@ const UpdateUserProfile = () => {
   };
 
   return (
-    <Card className="border-none rounded-none shadow-none bg-transparent">
-      <CardContent className="px-6 py-0">
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+    <Card className="border-none rounded-none  bg-transparent">
+      <CardContent>
+        <form onSubmit={handleSubmit} className=" max-w-xl mx-auto">
           <div className="grid gap-6">
             <div className="grid gap-2">
               <Label htmlFor="fullName" className="text-sm font-medium">
@@ -54,23 +54,6 @@ const UpdateUserProfile = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-10 bg-[#121212] border-[#303030]"
               />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                New Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Leave blank to keep current password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-10 bg-[#121212] border-[#303030]"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter a new password only if you want to change it
-              </p>
             </div>
 
             <Button

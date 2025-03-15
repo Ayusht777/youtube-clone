@@ -1,7 +1,6 @@
 import { UserApi } from "@/api/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { Camera } from "lucide-react";
@@ -37,13 +36,13 @@ const UserProfile = () => {
 
   return (
     <>
-      <Card className="border-none rounded-none shadow-none bg-transparent">
-        <CardContent className="p-6 flex flex-col items-center gap-4">
+      <Card className="border-none rounded-none ">
+        <CardContent className=" flex flex-col items-center gap-4">
           {isLoading ? (
             <Skeleton className="size-24 rounded-full" />
           ) : (
             <div className="relative group">
-              <Avatar className="size-24 border-2 border-primary/10">
+              <Avatar className="size-24 ">
                 <AvatarImage src={avatarUrl} alt={fullname} />
                 <AvatarFallback className="text-3xl bg-primary/5">
                   {fullname.charAt(0).toUpperCase()}
@@ -78,7 +77,6 @@ const UserProfile = () => {
           </div>
         </CardContent>
       </Card>
-      <Separator className="mb-6" />
     </>
   );
 };
