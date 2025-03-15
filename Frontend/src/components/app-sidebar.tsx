@@ -1,10 +1,8 @@
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
-  SidebarContent,
-  SidebarFooter
+  SidebarContent
 } from "@/components/ui/sidebar";
 import { sidebarData } from "@/data/sidebar-data";
 
@@ -21,9 +19,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={sidebarData.navMain} />
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-       
-      </SidebarFooter>
+      
     </Sidebar>
   );
 }
