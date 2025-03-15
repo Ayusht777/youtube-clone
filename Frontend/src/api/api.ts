@@ -2,6 +2,8 @@ import { useAuthStore } from "@/store/authStore";
 import axiosInstance from "../lib/axios";
 import { ApiError, ApiResponse, LoginFormData, UserData } from "../types/index";
 
+const { accessToken } = useAuthStore.getState();
+
 export const UserApi = {
   register: async (data: FormData): Promise<ApiResponse<UserData>> => {
     try {
@@ -24,8 +26,6 @@ export const UserApi = {
     }
   },
   logout: async (): Promise<void> => {
-    const { accessToken } = useAuthStore.getState();
-    console.log(accessToken);
     try {
       await axiosInstance.post(
         "/users/logout",
@@ -37,6 +37,18 @@ export const UserApi = {
           },
         }
       );
+    } catch (error) {
+      throw error as ApiError;
+    }
+  },
+  getCurrentUser: async (): Promise<ApiResponse<UserData>> => {
+    try {
+      const response = await axiosInstance.get("/users/getCurrentUser", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
     } catch (error) {
       throw error as ApiError;
     }
