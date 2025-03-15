@@ -3,38 +3,30 @@ import { AlertTriangle, Key, Trash2, User } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Card, CardHeader } from "../ui/card";
+import { Separator } from "../ui/separator";
 import UpdateUserProfile from "./update-user-profile";
 import UserProfile from "./user-profile";
 
 const UserSettingTab = () => {
   return (
-    <Card className="border-none shadow-none bg-transparent">
+    <Card className="border-none">
       <CardHeader className="px-6 pb-0">
-        <Tabs defaultValue="update-profile" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 mb-8 bg-transparent border-b">
-            <TabsTrigger
-              value="update-profile"
-              className="flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent"
-            >
+        <Tabs defaultValue="update-profile">
+          <TabsList className="w-full bg-transparent ">
+            <TabsTrigger value="update-profile">
               <User className="size-4" />
               <span>Profile</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="update-password"
-              className="flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent"
-            >
+            <TabsTrigger value="update-password">
               <Key className="size-4" />
               <span>Password</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="delete-account"
-              className="flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent"
-            >
+            <TabsTrigger value="delete-account">
               <Trash2 className="size-4" />
               <span>Account</span>
             </TabsTrigger>
           </TabsList>
-
+          <Separator />
           <TabsContent value="update-profile">
             <UserProfile />
             <UpdateUserProfile />

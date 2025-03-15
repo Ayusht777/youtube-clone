@@ -40,10 +40,10 @@ const UserProfile = () => {
       <Card className="border-none rounded-none shadow-none bg-transparent">
         <CardContent className="p-6 flex flex-col items-center gap-4">
           {isLoading ? (
-            <Skeleton className="size-32 rounded-full" />
+            <Skeleton className="size-24 rounded-full" />
           ) : (
             <div className="relative group">
-              <Avatar className="size-32 border-2 border-primary/10">
+              <Avatar className="size-24 border-2 border-primary/10">
                 <AvatarImage src={avatarUrl} alt={fullname} />
                 <AvatarFallback className="text-3xl bg-primary/5">
                   {fullname.charAt(0).toUpperCase()}
