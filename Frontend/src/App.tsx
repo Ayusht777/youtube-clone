@@ -1,5 +1,4 @@
 import { RootLayout } from "@/layouts/RootLayout";
-
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile-page";
@@ -10,7 +9,6 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-
   return (
     <BrowserRouter>
       <Routes>
@@ -18,13 +16,17 @@ function App() {
         <Route
           path="/login"
           element={
-            !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />
+            <LoginPage />
           }
         />
         <Route
           path="/signup"
           element={
-            !isAuthenticated ? <SignupPage /> : <Navigate to="/" replace />
+            isAuthenticated ? (
+              <Navigate to="/" replace={true} />
+            ) : (
+              <SignupPage />
+            )
           }
         />
 
@@ -36,9 +38,12 @@ function App() {
           </Route>
         </Route>
 
+        {/* Catch-all route */}
         <Route
           path="*"
-          element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />}
+          element={
+            <Navigate to={isAuthenticated ? "/" : "/login"} replace={true} />
+          }
         />
       </Routes>
     </BrowserRouter>
