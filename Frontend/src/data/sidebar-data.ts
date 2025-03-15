@@ -55,11 +55,6 @@ export const sidebarData = {
       url: "/channel-stats",
       icon: BarChart,
     },
-    {
-      title: "Community",
-      url: "/community",
-      icon: User,
-    },
   ],
   navSecondary: [
     {

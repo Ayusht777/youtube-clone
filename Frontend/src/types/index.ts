@@ -30,8 +30,11 @@ export interface UserData {
   email: string;
   avatar: Avatar;
   coverImage?: string;
+  watchHistory?: string[];
   accessToken: string;
   refreshToken: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface LoginFormData {

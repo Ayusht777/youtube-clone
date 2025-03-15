@@ -50,9 +50,9 @@ export function NavUser() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/profile")}>
             <BadgeCheck />
-            Account
+            Profile
           </DropdownMenuItem>
 
           <DropdownMenuItem>
