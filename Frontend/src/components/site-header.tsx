@@ -1,3 +1,4 @@
+import { NavUser } from "@/components/nav-user";
 import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -54,16 +55,7 @@ export function SiteHeader() {
 
         {/* Right Section: Placeholder for Additional Buttons */}
         <div className="flex items-center gap-2">
-          {/* Placeholder for Create, Notifications, Profile, etc. */}
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-            {/* Add Create Icon (e.g., Plus) */}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-            {/* Add Notifications Icon (e.g., Bell) */}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-            {/* Add Profile Icon (e.g., User) */}
-          </Button>
+        <NavUser />
         </div>
       </div>
     </header>
