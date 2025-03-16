@@ -53,4 +53,21 @@ export const UserApi = {
       throw error as ApiError;
     }
   },
+  refreshToken: async (): Promise<ApiResponse<UserData>> => {
+    try {
+      const { refreshToken } = useAuthStore.getState();
+      const response = await axiosInstance.post("/users/refresh-token", {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      });
+      useAuthStore.setState({
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      throw error as ApiError;
+    }
+  },
 };
