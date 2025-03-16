@@ -41,3 +41,8 @@ export interface LoginFormData {
   email: string;
   password: string;
 }
+
+export interface UpdateUserProfileData {
+  fullName: string;
+  email: string;
+}

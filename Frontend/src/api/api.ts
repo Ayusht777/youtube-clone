@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
 import axiosInstance from "../lib/axios";
-import { ApiError, ApiResponse, LoginFormData, UserData } from "../types/index";
+import { ApiError, ApiResponse, LoginFormData, UserData, UpdateUserProfileData } from "../types/index";
 
 export const UserApi = {
   register: async (data: FormData): Promise<ApiResponse<UserData>> => {
@@ -48,6 +48,23 @@ export const UserApi = {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      return response.data;
+    } catch (error) {
+      throw error as ApiError;
+    }
+  },
+  updateUserProfile: async (data: UpdateUserProfileData): Promise<ApiResponse<UserData>> => {
+    try {
+      const { accessToken } = useAuthStore.getState();
+      const response = await axiosInstance.patch(
+        "/users/updateAccountDetails",
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       throw error as ApiError;

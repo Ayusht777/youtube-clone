@@ -74,7 +74,7 @@ userSchema.methods.generateAccessToken = function () {
     },
     config.access_token_secret,
     {
-      expiresIn: "1h",
+      expiresIn: "24h",
     }
   );
 };

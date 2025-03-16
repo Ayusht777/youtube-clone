@@ -1,32 +1,49 @@
+import { UserApi } from "@/api/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/authStore";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent } from "../ui/card";
 
 const UpdateUserProfile = () => {
-  const { user } = useAuthStore();
-  const [fullName, setFullName] = useState(user?.fullName || "");
-  const [email, setEmail] = useState(user?.email || "");
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: UserApi.getCurrentUser,
+  });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const updateUserProfileMutation = useMutation({
+    mutationFn: (data: { fullName: string; email: string }) =>
+      UserApi.updateUserProfile(data),
+    onSuccess: () => {
+      toast.success("Profile updated successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to update profile. Please try again.");
+    },
+  });
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (data?.data) {
+      setFullName(data.data.fullName);
+      setEmail(data.data.email);
+    }
+  }, [data]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // Show success toast
-    }, 1500);
+    updateUserProfileMutation.mutate({ fullName, email });
   };
 
   return (
-    <Card className="border-none rounded-none  bg-transparent">
+    <Card className="border-none rounded-none bg-transparent">
       <CardContent>
-        <form onSubmit={handleSubmit} className=" max-w-xl mx-auto">
+        <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
           <div className="grid gap-6">
             <div className="grid gap-2">
               <Label htmlFor="fullName" className="text-sm font-medium">
@@ -59,9 +76,9 @@ const UpdateUserProfile = () => {
             <Button
               type="submit"
               className="w-full h-10 mt-4 bg-white text-black hover:bg-gray-200"
-              disabled={isSubmitting}
+              disabled={updateUserProfileMutation.isPending}
             >
-              {isSubmitting ? (
+              {updateUserProfileMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   Updating...

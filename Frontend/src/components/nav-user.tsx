@@ -14,20 +14,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router";
-
+import { useQuery } from "@tanstack/react-query";
+import { UserApi } from "@/api/api";
+import { ApiResponse, UserData } from "@/types";
 export function NavUser() {
-  const { user, logout } = useAuthStore();
+  const { logout } = useAuthStore();
+  const { data} = useQuery<ApiResponse<UserData>>({
+    queryKey: ["current-user"],
+    queryFn: UserApi.getCurrentUser,
+  });
 
   const navigate = useNavigate();
   const handleLogout = async () => {
     logout();
     navigate("/login");
   };
+  const user = data?.data;
+  console.log(user);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-8 w-8 rounded-full">
-          <AvatarImage src={user?.avatar.url} alt={user?.fullname} />
+          <AvatarImage src={user?.avatar.url} alt={user?.fullName} />
           <AvatarFallback className="rounded-lg">CN</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -40,11 +48,11 @@ export function NavUser() {
         <DropdownMenuLabel className="p-0 font-normal">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-full">
-              <AvatarImage src={user?.avatar.url} alt={user?.fullname} />
+              <AvatarImage src={user?.avatar.url} alt={user?.fullName} />
               <AvatarFallback className="rounded-lg">CN</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user?.fullname}</span>
+              <span className="truncate font-medium">{user?.fullName}</span>
               <span className="truncate text-xs">{user?.email}</span>
             </div>
           </div>
