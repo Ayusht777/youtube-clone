@@ -29,13 +29,13 @@ export function NavUser() {
     logout();
     navigate("/login");
   };
-  const user = data?.data;
-  console.log(user);
+  const user = data;
+  console.log(data);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-8 w-8 rounded-full">
-          <AvatarImage src={user?.avatar.url} alt={user?.fullName} />
+          <AvatarImage src={user?.avatar.url} alt={user?.fullname} />
           <AvatarFallback className="rounded-lg">CN</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -48,11 +48,11 @@ export function NavUser() {
         <DropdownMenuLabel className="p-0 font-normal">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-full">
-              <AvatarImage src={user?.avatar.url} alt={user?.fullName} />
+              <AvatarImage src={user?.avatar.url} alt={user?.fullname} />
               <AvatarFallback className="rounded-lg">CN</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user?.fullName}</span>
+              <span className="truncate font-medium">{user?.fullname}</span>
               <span className="truncate text-xs">{user?.email}</span>
             </div>
           </div>
