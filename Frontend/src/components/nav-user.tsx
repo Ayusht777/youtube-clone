@@ -15,13 +15,13 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { UserApi } from "@/api/api";
-import { ApiResponse, UserData } from "@/types";
+import { getCurrentUser ,User} from "@/api/userApi";
+
 export function NavUser() {
   const { logout } = useAuthStore();
-  const { data} = useQuery<ApiResponse<UserData>>({
+  const { data} = useQuery<User>({
     queryKey: ["current-user"],
-    queryFn: UserApi.getCurrentUser,
+    queryFn: getCurrentUser,
   });
 
   const navigate = useNavigate();
